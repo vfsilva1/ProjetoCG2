@@ -19,6 +19,8 @@ import com.jme3.input.controls.MouseButtonTrigger;
 import com.jme3.light.DirectionalLight;
 import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
+import com.jme3.math.FastMath;
+import com.jme3.math.Quaternion;
 import com.jme3.math.Vector2f;
 import com.jme3.math.Vector3f;
 import com.jme3.renderer.RenderManager;
@@ -43,6 +45,7 @@ public class Main extends SimpleApplication implements AnimEventListener{
     
     //Player
     private CharacterControl player;
+    private Spatial gun;
     
     //Inimigo
     private Spatial sinbad;
@@ -73,6 +76,7 @@ public class Main extends SimpleApplication implements AnimEventListener{
     
     public static void main(String[] args) {
         Main app = new Main();
+        app.setShowSettings(true);
         app.start();
     }
     
@@ -87,9 +91,8 @@ public class Main extends SimpleApplication implements AnimEventListener{
         initMap();
         initCrosshairs();
         
-        Spatial gun = assetManager.loadModel("Models/Gun/AK.obj");
-        gun.scale(0.1f);
-        gun.setLocalTranslation(-20f, 0f, -30f);
+        
+        //gun.setLocalTranslation(-20f, 0f, -30f);
         
         rootNode.attachChild(gun);
     }
@@ -145,7 +148,9 @@ public class Main extends SimpleApplication implements AnimEventListener{
     
     @Override
     public void simpleUpdate(float tpf) {
-        //TODO: add update code
+        //prende a arma na camera
+        setGun();
+        
     }
 
     @Override
@@ -328,6 +333,10 @@ public class Main extends SimpleApplication implements AnimEventListener{
         //velocidade da camera
         flyCam.setMoveSpeed(10);
         
+        //Arma
+        gun = assetManager.loadModel("Models/Gun/AK.obj");
+        gun.scale(0.1f);
+        
         CapsuleCollisionShape capsuleShape = new CapsuleCollisionShape(1.5f, 6f, 1);
         player = new CharacterControl(capsuleShape, 0.05f);
         player.setJumpSpeed(20);
@@ -335,5 +344,18 @@ public class Main extends SimpleApplication implements AnimEventListener{
         player.setGravity(new Vector3f(0,-30f,0));
         player.setPhysicsLocation(new Vector3f(-20f, 1f, -20f));
         bulletAppState.getPhysicsSpace().add(player);
+    }
+
+    private void setGun() {
+        Vector3f vectorDifference = new Vector3f(cam.getLocation().subtract(gun.getWorldTranslation()));
+        gun.setLocalTranslation(vectorDifference.addLocal(gun.getLocalTranslation()));
+        
+        Quaternion worldDiff = new Quaternion(cam.getRotation().mult(gun.getWorldRotation().inverse()));
+        gun.setLocalRotation(worldDiff.multLocal(gun.getLocalRotation()));
+        
+        gun.move(cam.getDirection().mult(2.5f));
+        gun.move(cam.getUp().mult(-0.6f));
+        gun.move(cam.getLeft().mult(1.3f));
+        gun.rotate(0.1f, FastMath.PI * 1.45f, 0.05f);
     }
 }

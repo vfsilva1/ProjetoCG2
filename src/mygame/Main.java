@@ -73,7 +73,6 @@ public class Main extends SimpleApplication implements AnimEventListener{
     
     public static void main(String[] args) {
         Main app = new Main();
-        app.setShowSettings(false);
         app.start();
     }
     
@@ -88,8 +87,8 @@ public class Main extends SimpleApplication implements AnimEventListener{
         initMap();
         initCrosshairs();
         
-        Spatial gun = assetManager.loadModel("Models/Gun/Ak 47.obj");
-        gun.scale(0.01f);
+        Spatial gun = assetManager.loadModel("Models/Gun/AK.obj");
+        gun.scale(0.1f);
         gun.setLocalTranslation(-20f, 0f, -30f);
         
         rootNode.attachChild(gun);

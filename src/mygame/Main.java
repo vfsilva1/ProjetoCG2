@@ -6,8 +6,10 @@ import com.jme3.animation.AnimEventListener;
 import com.jme3.animation.LoopMode;
 import com.jme3.app.SimpleApplication;
 import com.jme3.asset.TextureKey;
-import com.jme3.bounding.BoundingBox;
 import com.jme3.bullet.BulletAppState;
+import com.jme3.bullet.collision.PhysicsCollisionListener;
+import com.jme3.bullet.collision.shapes.CapsuleCollisionShape;
+import com.jme3.bullet.control.CharacterControl;
 import com.jme3.bullet.control.RigidBodyControl;
 import com.jme3.font.BitmapText;
 import com.jme3.input.KeyInput;
@@ -25,8 +27,9 @@ import com.jme3.scene.Spatial;
 import com.jme3.scene.shape.Box;
 import com.jme3.scene.shape.Sphere;
 import com.jme3.scene.shape.Sphere.TextureMode;
+import com.jme3.system.AppSettings;
 import com.jme3.texture.Texture;
-import javafx.scene.shape.Rectangle;
+import com.sun.media.sound.ModelSource;
 
 /**
  * This is the Main Class of your Game. You should only do initialization here.
@@ -34,30 +37,26 @@ import javafx.scene.shape.Rectangle;
  * @author normenhansen
  */
 public class Main extends SimpleApplication implements AnimEventListener{
-
-    public static void main(String[] args) {
-        Main app = new Main();
-        app.start();
-    }
     
     //Material
     Material stone_mat;
+    
+    //Player
+    private CharacterControl player;
     
     //Inimigo
     private Spatial sinbad;
     private AnimControl control1;
     private AnimChannel channel1;
-    private AnimChannel channel2;
     
     //Fisica da aplicaçao
     private BulletAppState bulletAppState;
+    
     //Fisica da bala, paredes e inimigo
     private RigidBodyControl bullet_phy;
     private static final Sphere bullet;
     private RigidBodyControl floor_phy;
     private static final Box floor;
-    private RigidBodyControl enemy_phy;
-    public static final BoundingBox enemy;
     
     //Dimensoes da sala(parede e chao)
     private static final float floorLargura = 1;
@@ -70,29 +69,30 @@ public class Main extends SimpleApplication implements AnimEventListener{
         
         floor = new Box(floorLargura, floorAltura, floorComprimento);
         floor.scaleTextureCoordinates(new Vector2f(1f, 1f));
-        
-        enemy = new BoundingBox();
     }
     
+    public static void main(String[] args) {
+        Main app = new Main();
+        app.setShowSettings(false);
+        app.start();
+    }
     
     @Override
     public void simpleInitApp() {
         initKeys();
+        initPhysics();
+        initPlayer();
         initMaterials();
         //initSinbad();
         initLight();
         initMap();
         initCrosshairs();
         
-        flyCam.setMoveSpeed(10);
+        Spatial gun = assetManager.loadModel("Models/Gun/Ak 47.obj");
+        gun.scale(0.01f);
+        gun.setLocalTranslation(-20f, 0f, -30f);
         
-        bulletAppState = new BulletAppState();
-        stateManager.attach(bulletAppState);
-        
-        //mudar localização do personagem ao iniciar o jogo
-        cam.setLocation(new Vector3f(-20f, 0f, -20f));
-        
-        //System.out.println(control1.getAnimationNames());
+        rootNode.attachChild(gun);
     }
     
     private void initKeys() {
@@ -100,10 +100,12 @@ public class Main extends SimpleApplication implements AnimEventListener{
         inputManager.addMapping("SliceHorizontal",  new KeyTrigger(keyInput.KEY_X));
         inputManager.addMapping("RunBase",  new KeyTrigger(keyInput.KEY_C));
         inputManager.addMapping("shoot", new MouseButtonTrigger(mouseInput.BUTTON_LEFT));
+        inputManager.addMapping("Jump", new KeyTrigger(KeyInput.KEY_SPACE));
         inputManager.addListener(actionListener, "SliceVertical");
         inputManager.addListener(actionListener, "SliceHorizontal");
         inputManager.addListener(actionListener, "RunBase");
         inputManager.addListener(actionListener, "shoot");
+        inputManager.addListener(actionListener, "Jump");
     }
 
     private ActionListener actionListener = new ActionListener() { 
@@ -134,6 +136,9 @@ public class Main extends SimpleApplication implements AnimEventListener{
             }
             if (name.equals("shoot") && !keyPressed) {
                 makeCannonBall();
+            }
+            if (name.equals("Jump") && !keyPressed) {
+                player.jump(new Vector3f(0,20f,0));
             }
         }
     };
@@ -170,6 +175,8 @@ public class Main extends SimpleApplication implements AnimEventListener{
         
         channel1 = control1.createChannel();
         channel1.setAnim("RunTop");
+        
+        //System.out.println(control1.getAnimationNames());
     }
 
     private void initLight() {
@@ -203,7 +210,7 @@ public class Main extends SimpleApplication implements AnimEventListener{
         /**
          * Make the ball physical with a mass > 0.0f
          */
-        bullet_phy = new RigidBodyControl(0.005f);
+        bullet_phy = new RigidBodyControl(0.1f);
         /**
          * Add physical ball to physics space.
          */
@@ -267,7 +274,7 @@ public class Main extends SimpleApplication implements AnimEventListener{
                   sinbad.setLocalTranslation(2.0f, 0.0f, 0.0f);
                   rootNode.attachChild(sinbad);
                   
-                  //OrcsList.add(orcs);
+                  OrcsList.add(orcs);
                 }*/
             }
         }
@@ -309,5 +316,25 @@ public class Main extends SimpleApplication implements AnimEventListener{
         //r.setPhysicsLocation(boxGeo.getLocalTranslation());
 
         //state.getPhysicsSpace().add(r);
+    }
+
+    private void initPhysics() {
+        bulletAppState = new BulletAppState();
+        stateManager.attach(bulletAppState);
+    }
+
+    private void initPlayer() {
+        //mudar localização do personagem ao iniciar o jogo
+        cam.setLocation(new Vector3f(-20f, 1f, -20f));
+        //velocidade da camera
+        flyCam.setMoveSpeed(10);
+        
+        CapsuleCollisionShape capsuleShape = new CapsuleCollisionShape(1.5f, 6f, 1);
+        player = new CharacterControl(capsuleShape, 0.05f);
+        player.setJumpSpeed(20);
+        player.setFallSpeed(30);
+        player.setGravity(new Vector3f(0,-30f,0));
+        player.setPhysicsLocation(new Vector3f(-20f, 1f, -20f));
+        bulletAppState.getPhysicsSpace().add(player);
     }
 }

@@ -17,6 +17,7 @@ import com.jme3.input.controls.MouseButtonTrigger;
 import com.jme3.light.DirectionalLight;
 import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
+import com.jme3.math.Vector2f;
 import com.jme3.math.Vector3f;
 import com.jme3.renderer.RenderManager;
 import com.jme3.scene.Geometry;
@@ -59,15 +60,16 @@ public class Main extends SimpleApplication implements AnimEventListener{
     public static final BoundingBox enemy;
     
     //Dimensoes da sala(parede e chao)
-    private static final float floorLargura = 0;
-    private static final float floorComprimento = 0;
-    private static final float floorAltura = 0;
+    private static final float floorLargura = 1;
+    private static final float floorComprimento = 1;
+    private static final float floorAltura = 1;
     
     static {
         bullet = new Sphere(16, 16, 0.2f, true, false);
         bullet.setTextureMode(TextureMode.Projected);
         
         floor = new Box(floorLargura, floorAltura, floorComprimento);
+        floor.scaleTextureCoordinates(new Vector2f(1f, 1f));
         
         enemy = new BoundingBox();
     }
@@ -77,20 +79,20 @@ public class Main extends SimpleApplication implements AnimEventListener{
     public void simpleInitApp() {
         initKeys();
         initMaterials();
-        initSinbad();
+        //initSinbad();
         initLight();
-        initFloor();
-        initWall();
+        initMap();
         initCrosshairs();
+        
+        flyCam.setMoveSpeed(10);
         
         bulletAppState = new BulletAppState();
         stateManager.attach(bulletAppState);
         
         //mudar localização do personagem ao iniciar o jogo
-        cam.setLocation(new Vector3f(0, 2f, 6f));
+        cam.setLocation(new Vector3f(-20f, 0f, -20f));
         
         //System.out.println(control1.getAnimationNames());
-        
     }
     
     private void initKeys() {
@@ -213,13 +215,7 @@ public class Main extends SimpleApplication implements AnimEventListener{
         bullet_phy.setLinearVelocity(cam.getDirection().mult(100));
     }
 
-    private void initFloor() {
-        
-    }
-
-    private void initWall() {
-        
-    }
+    
 
     private void initMaterials() {
         stone_mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
@@ -227,5 +223,91 @@ public class Main extends SimpleApplication implements AnimEventListener{
         key2.setGenerateMips(true);
         Texture tex2 = assetManager.loadTexture(key2);
         stone_mat.setTexture("ColorMap", tex2);
+    }
+
+    private void initMap() {
+        int map[][] = {
+            {1, 1, 1, 1, 1, 1, 4, 4, 1, 1, 1, 1, 4, 4, 1, 1, 1, 1, 1, 1},
+            {1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 1},
+            {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+            {1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1},
+            {1, 0, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 1, 0, 0, 1},
+            {1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1},
+            {1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1},
+            {1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1},
+            {1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1},
+            {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+            {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+            {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+            {1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1},
+            {1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1},
+            {1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1},
+            {1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1},
+            {1, 0, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 1, 0, 0, 1},
+            {1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1},
+            {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+            {1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 1},
+            {1, 1, 1, 1, 1, 1, 1, 1, 1, 4, 4, 1, 1, 1, 1, 1, 1, 1, 1, 1}
+        };
+        
+        for (int i = 0; i < map.length; i++) {
+            for (int j = 0; j < map[0].length; j++) {
+                //Floor
+                criarParedeChao(i, j, -1);
+                //Wall
+                if (map[i][j] == 1) {
+                    criarParedeChao(i, j, 1);
+                }
+                if (map[i][j] == 2) {
+                    
+                }
+                /*if(map[i][j] == 4) { 
+                  sinbad = assetManager.loadModel("Models/Sinbad/Sinbad.mesh.xml");
+                  sinbad.setLocalScale(0.5f);
+                  sinbad.setLocalTranslation(2.0f, 0.0f, 0.0f);
+                  rootNode.attachChild(sinbad);
+                  
+                  //OrcsList.add(orcs);
+                }*/
+            }
+        }
+        
+    }
+
+    private void criarParedeChao(int x, int z, int chao) {
+        Box boxMesh = new Box(1f, 1f, 1f);
+        
+        Geometry boxGeo;
+        if (chao == -1) {
+            boxGeo = new Geometry("BlocoChao", boxMesh);
+            Material boxMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+            Texture cube1Tex = assetManager.loadTexture("Textures/FloorTexture.jpg");
+            boxMat.setTexture("ColorMap", cube1Tex);
+            boxGeo.setMaterial(boxMat);
+            boxGeo.move(0f, -2f, 0f);
+            
+            //Texture dirt = assetManager.loadTexture("Textures/Blood.png");
+            //dirt.setWrap(WrapMode.Repeat);
+            //boxMat.setTexture("ColorMap", dirt);
+            //boxMat.setFloat("Tex2Scale", 32f);
+        } else {
+            boxGeo = new Geometry("Bloco", boxMesh); 
+            Material boxMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+            Texture cube2Tex = assetManager.loadTexture("Textures/WallTexture.jpg");
+            boxMat.setTexture("ColorMap", cube2Tex);
+            boxGeo.scale(1f, 3.0f, 1f);
+            boxGeo.setMaterial(boxMat);
+            boxGeo.setMaterial(boxMat);
+        }
+
+        rootNode.attachChild(boxGeo);
+
+        //RigidBodyControl r = new RigidBodyControl(0);
+        //boxGeo.addControl(r);
+
+        boxGeo.move(-40 + x * 2, chao, -40 + z * 2);
+        //r.setPhysicsLocation(boxGeo.getLocalTranslation());
+
+        //state.getPhysicsSpace().add(r);
     }
 }

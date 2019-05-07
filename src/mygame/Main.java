@@ -94,7 +94,7 @@ public class Main extends SimpleApplication implements AnimEventListener{
         
         //gun.setLocalTranslation(-20f, 0f, -30f);
         
-        rootNode.attachChild(gun);
+        
     }
     
     private void initKeys() {
@@ -336,6 +336,8 @@ public class Main extends SimpleApplication implements AnimEventListener{
         //Arma
         gun = assetManager.loadModel("Models/Gun/AK.obj");
         gun.scale(0.1f);
+        rootNode.attachChild(gun);
+        
         
         CapsuleCollisionShape capsuleShape = new CapsuleCollisionShape(1.5f, 6f, 1);
         player = new CharacterControl(capsuleShape, 0.05f);
@@ -353,9 +355,9 @@ public class Main extends SimpleApplication implements AnimEventListener{
         Quaternion worldDiff = new Quaternion(cam.getRotation().mult(gun.getWorldRotation().inverse()));
         gun.setLocalRotation(worldDiff.multLocal(gun.getLocalRotation()));
         
-        gun.move(cam.getDirection().mult(2.5f));
+        gun.move(cam.getDirection().mult(2.2f));
         gun.move(cam.getUp().mult(-0.6f));
-        gun.move(cam.getLeft().mult(1.3f));
-        gun.rotate(0.1f, FastMath.PI * 1.45f, 0.05f);
+        gun.move(cam.getLeft().mult(-0.4f));
+        gun.rotate(0.1f, FastMath.PI * 1.47f, 0.07f);
     }
 }

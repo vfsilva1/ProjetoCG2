@@ -9,6 +9,7 @@ import com.jme3.asset.TextureKey;
 import com.jme3.bullet.BulletAppState;
 import com.jme3.bullet.collision.PhysicsCollisionListener;
 import com.jme3.bullet.collision.shapes.CapsuleCollisionShape;
+import com.jme3.bullet.collision.shapes.SphereCollisionShape;
 import com.jme3.bullet.control.CharacterControl;
 import com.jme3.bullet.control.RigidBodyControl;
 import com.jme3.font.BitmapText;
@@ -46,6 +47,10 @@ public class Main extends SimpleApplication implements AnimEventListener{
     //Player
     private CharacterControl player;
     private Spatial gun;
+    private Vector3f camDir = new Vector3f();
+    private Vector3f camLeft = new Vector3f();
+    private Vector3f walkDirection = new Vector3f();
+    private boolean left = false, right = false, up = false, down = false;
     
     //Inimigo
     private Spatial sinbad;
@@ -54,6 +59,7 @@ public class Main extends SimpleApplication implements AnimEventListener{
     
     //Fisica da aplicaçao
     private BulletAppState bulletAppState;
+    private SphereCollisionShape bulletCollisionShape;
     
     //Fisica da bala, paredes e inimigo
     private RigidBodyControl bullet_phy;
@@ -61,13 +67,14 @@ public class Main extends SimpleApplication implements AnimEventListener{
     private RigidBodyControl floor_phy;
     private static final Box floor;
     
+    
     //Dimensoes da sala(parede e chao)
     private static final float floorLargura = 1;
     private static final float floorComprimento = 1;
     private static final float floorAltura = 1;
     
     static {
-        bullet = new Sphere(16, 16, 0.2f, true, false);
+        bullet = new Sphere(32, 32, 0.4f, true, false);
         bullet.setTextureMode(TextureMode.Projected);
         
         floor = new Box(floorLargura, floorAltura, floorComprimento);
@@ -76,7 +83,7 @@ public class Main extends SimpleApplication implements AnimEventListener{
     
     public static void main(String[] args) {
         Main app = new Main();
-        app.setShowSettings(true);
+        app.setShowSettings(false);
         app.start();
     }
     
@@ -102,11 +109,19 @@ public class Main extends SimpleApplication implements AnimEventListener{
         inputManager.addMapping("SliceHorizontal",  new KeyTrigger(keyInput.KEY_X));
         inputManager.addMapping("RunBase",  new KeyTrigger(keyInput.KEY_C));
         inputManager.addMapping("shoot", new MouseButtonTrigger(mouseInput.BUTTON_LEFT));
+        inputManager.addMapping("Left", new KeyTrigger(KeyInput.KEY_A));
+        inputManager.addMapping("Right", new KeyTrigger(KeyInput.KEY_D));
+        inputManager.addMapping("Up", new KeyTrigger(KeyInput.KEY_W));
+        inputManager.addMapping("Down", new KeyTrigger(KeyInput.KEY_S));
         inputManager.addMapping("Jump", new KeyTrigger(KeyInput.KEY_SPACE));
         inputManager.addListener(actionListener, "SliceVertical");
         inputManager.addListener(actionListener, "SliceHorizontal");
         inputManager.addListener(actionListener, "RunBase");
         inputManager.addListener(actionListener, "shoot");
+        inputManager.addListener(actionListener, "Left");
+        inputManager.addListener(actionListener, "Right");
+        inputManager.addListener(actionListener, "Up");
+        inputManager.addListener(actionListener, "Down");
         inputManager.addListener(actionListener, "Jump");
     }
 
@@ -139,8 +154,17 @@ public class Main extends SimpleApplication implements AnimEventListener{
             if (name.equals("shoot") && !keyPressed) {
                 makeCannonBall();
             }
+            if (name.equals("Left")) {
+            if (keyPressed) { left = true; } else { left = false; }
+            } else if (name.equals("Right")) {
+            if (keyPressed) { right = true; } else { right = false; }
+            } else if (name.equals("Up")) {
+            if (keyPressed) { up = true; } else { up = false; }
+            } else if (name.equals("Down")) {
+            if (keyPressed) { down = true; } else { down = false; }
+            }
             if (name.equals("Jump") && !keyPressed) {
-                player.jump(new Vector3f(0,20f,0));
+                player.jump(new Vector3f(0, 10f, 0));
             }
         }
     };
@@ -150,6 +174,24 @@ public class Main extends SimpleApplication implements AnimEventListener{
     public void simpleUpdate(float tpf) {
         //prende a arma na camera
         setGun();
+        
+        camDir.set(cam.getDirection()).multLocal(0.6f);
+        camLeft.set(cam.getLeft()).multLocal(0.4f);
+        walkDirection.set(0, 0, 0);
+        if (left) {
+            walkDirection.addLocal(camLeft);
+        }
+        if (right) {
+            walkDirection.addLocal(camLeft.negate());
+        }
+        if (up) {
+            walkDirection.addLocal(camDir);
+        }
+        if (down) {
+            walkDirection.addLocal(camDir.negate());
+        }
+        player.setWalkDirection(walkDirection);
+        cam.setLocation(player.getPhysicsLocation());
         
     }
 
@@ -210,23 +252,26 @@ public class Main extends SimpleApplication implements AnimEventListener{
         /**
          * Position the cannon ball
          */
-        ball_geo.setLocalTranslation(cam.getLocation());
+        ball_geo.setLocalTranslation(player.getPhysicsLocation());
         /**
          * Make the ball physical with a mass > 0.0f
          */
         bullet_phy = new RigidBodyControl(0.1f);
+        bulletCollisionShape = new SphereCollisionShape(0.4f);
+        RigidBodyControl bulletNode = new RigidBodyControl(bulletCollisionShape, 1);
+        bulletNode.setLinearVelocity(cam.getDirection().mult(25));
+        
         /**
          * Add physical ball to physics space.
          */
-        ball_geo.addControl(bullet_phy);
-        bulletAppState.getPhysicsSpace().add(bullet_phy);
+        ball_geo.addControl(bulletNode);
+        rootNode.attachChild(ball_geo);
+        bulletAppState.getPhysicsSpace().add(bulletNode);
         /**
          * Accelerate the physical ball to shoot it.
          */
-        bullet_phy.setLinearVelocity(cam.getDirection().mult(100));
+        //inearVelocity(cam.getDirection().mult(100));
     }
-
-    
 
     private void initMaterials() {
         stone_mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
@@ -264,10 +309,10 @@ public class Main extends SimpleApplication implements AnimEventListener{
         for (int i = 0; i < map.length; i++) {
             for (int j = 0; j < map[0].length; j++) {
                 //Floor
-                criarParedeChao(i, j, -1);
+                criarParedeChao(i, j, -1, 0.1f);
                 //Wall
                 if (map[i][j] == 1) {
-                    criarParedeChao(i, j, 1);
+                    criarParedeChao(i, j, 1, 3f);
                 }
                 if (map[i][j] == 2) {
                     
@@ -285,8 +330,8 @@ public class Main extends SimpleApplication implements AnimEventListener{
         
     }
 
-    private void criarParedeChao(int x, int z, int chao) {
-        Box boxMesh = new Box(1f, 1f, 1f);
+    private void criarParedeChao(int x, int z, int chao, float y) {
+        Box boxMesh = new Box(1f,y, 1f);
         
         Geometry boxGeo;
         if (chao == -1) {
@@ -295,7 +340,7 @@ public class Main extends SimpleApplication implements AnimEventListener{
             Texture cube1Tex = assetManager.loadTexture("Textures/FloorTexture.jpg");
             boxMat.setTexture("ColorMap", cube1Tex);
             boxGeo.setMaterial(boxMat);
-            boxGeo.move(0f, -2f, 0f);
+            boxGeo.move(0f,-1f, 0f);
             
             //Texture dirt = assetManager.loadTexture("Textures/Blood.png");
             //dirt.setWrap(WrapMode.Repeat);
@@ -306,24 +351,26 @@ public class Main extends SimpleApplication implements AnimEventListener{
             Material boxMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
             Texture cube2Tex = assetManager.loadTexture("Textures/WallTexture.jpg");
             boxMat.setTexture("ColorMap", cube2Tex);
-            boxGeo.scale(1f, 3.0f, 1f);
+            //boxGeo.scale(1f, 3.0f, 1f);
             boxGeo.setMaterial(boxMat);
             boxGeo.setMaterial(boxMat);
         }
 
         rootNode.attachChild(boxGeo);
 
-        //RigidBodyControl r = new RigidBodyControl(0);
-        //boxGeo.addControl(r);
+        RigidBodyControl r = new RigidBodyControl(0);
+            
+        boxGeo.addControl(r);
 
         boxGeo.move(-40 + x * 2, chao, -40 + z * 2);
-        //r.setPhysicsLocation(boxGeo.getLocalTranslation());
+        r.setPhysicsLocation(boxGeo.getLocalTranslation());
 
-        //state.getPhysicsSpace().add(r);
+        bulletAppState.getPhysicsSpace().add(r);
     }
 
     private void initPhysics() {
         bulletAppState = new BulletAppState();
+//        bulletAppState.setDebugEnabled(true);
         stateManager.attach(bulletAppState);
     }
 
@@ -339,12 +386,12 @@ public class Main extends SimpleApplication implements AnimEventListener{
         rootNode.attachChild(gun);
         
         
-        CapsuleCollisionShape capsuleShape = new CapsuleCollisionShape(1.5f, 6f, 1);
+        CapsuleCollisionShape capsuleShape = new CapsuleCollisionShape(4f, 1f, 1);
         player = new CharacterControl(capsuleShape, 0.05f);
-        player.setJumpSpeed(20);
+        player.setJumpSpeed(10);
         player.setFallSpeed(30);
         player.setGravity(new Vector3f(0,-30f,0));
-        player.setPhysicsLocation(new Vector3f(-20f, 1f, -20f));
+        player.setPhysicsLocation(new Vector3f(-20f, 10f, -20f));
         bulletAppState.getPhysicsSpace().add(player);
     }
 
@@ -355,9 +402,9 @@ public class Main extends SimpleApplication implements AnimEventListener{
         Quaternion worldDiff = new Quaternion(cam.getRotation().mult(gun.getWorldRotation().inverse()));
         gun.setLocalRotation(worldDiff.multLocal(gun.getLocalRotation()));
         
-        gun.move(cam.getDirection().mult(2.2f));
-        gun.move(cam.getUp().mult(-0.6f));
-        gun.move(cam.getLeft().mult(-0.4f));
-        gun.rotate(0.1f, FastMath.PI * 1.47f, 0.07f);
+        gun.move(cam.getDirection().mult(1.5f));
+        gun.move(cam.getUp().mult(-0.5f));
+        gun.move(cam.getLeft().mult(1f));
+        gun.rotate(0.1f, FastMath.PI * 1.45f, 0.07f);
     }
 }

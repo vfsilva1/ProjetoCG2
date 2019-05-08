@@ -25,6 +25,7 @@ import com.jme3.math.Quaternion;
 import com.jme3.math.Vector2f;
 import com.jme3.math.Vector3f;
 import com.jme3.renderer.RenderManager;
+import com.jme3.renderer.queue.RenderQueue;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Spatial;
 import com.jme3.scene.shape.Box;
@@ -59,26 +60,20 @@ public class Main extends SimpleApplication implements AnimEventListener{
     
     //Fisica da aplicaçao
     private BulletAppState bulletAppState;
+    
+    
+    //Fisica da bala
+    private static Sphere bullet;
     private SphereCollisionShape bulletCollisionShape;
-    
-    //Fisica da bala, paredes e inimigo
-    private RigidBodyControl bullet_phy;
-    private static final Sphere bullet;
-    private RigidBodyControl floor_phy;
-    private static final Box floor;
-    
-    
-    //Dimensoes da sala(parede e chao)
-    private static final float floorLargura = 1;
-    private static final float floorComprimento = 1;
-    private static final float floorAltura = 1;
+    private RigidBodyControl ball_phy;
+    private static final Sphere sphere;
     
     static {
-        bullet = new Sphere(32, 32, 0.4f, true, false);
-        bullet.setTextureMode(TextureMode.Projected);
-        
-        floor = new Box(floorLargura, floorAltura, floorComprimento);
-        floor.scaleTextureCoordinates(new Vector2f(1f, 1f));
+        /**
+         * Initialize the cannon ball geometry
+         */
+        sphere = new Sphere(32, 32, 0.4f, true, false);
+        sphere.setTextureMode(TextureMode.Projected);
     }
     
     public static void main(String[] args) {
@@ -97,10 +92,6 @@ public class Main extends SimpleApplication implements AnimEventListener{
         initLight();
         initMap();
         initCrosshairs();
-        
-        
-        //gun.setLocalTranslation(-20f, 0f, -30f);
-        
         
     }
     
@@ -152,7 +143,7 @@ public class Main extends SimpleApplication implements AnimEventListener{
                 }
             }
             if (name.equals("shoot") && !keyPressed) {
-                makeCannonBall();
+                 makeCannonBall();
             }
             if (name.equals("Left")) {
             if (keyPressed) { left = true; } else { left = false; }
@@ -175,23 +166,8 @@ public class Main extends SimpleApplication implements AnimEventListener{
         //prende a arma na camera
         setGun();
         
-        camDir.set(cam.getDirection()).multLocal(0.6f);
-        camLeft.set(cam.getLeft()).multLocal(0.4f);
-        walkDirection.set(0, 0, 0);
-        if (left) {
-            walkDirection.addLocal(camLeft);
-        }
-        if (right) {
-            walkDirection.addLocal(camLeft.negate());
-        }
-        if (up) {
-            walkDirection.addLocal(camDir);
-        }
-        if (down) {
-            walkDirection.addLocal(camDir.negate());
-        }
-        player.setWalkDirection(walkDirection);
-        cam.setLocation(player.getPhysicsLocation());
+        colisaoPlayer();
+        
         
     }
 
@@ -208,6 +184,34 @@ public class Main extends SimpleApplication implements AnimEventListener{
     @Override
     public void onAnimChange(AnimControl control, AnimChannel channel, String animName) {
        // throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+    
+    public void makeCannonBall() {
+        /**
+         * Create a cannon ball geometry and attach to scene graph.
+         */
+        Geometry ball_geo = new Geometry("cannon ball", sphere);
+        ball_geo.setMaterial(stone_mat);
+        rootNode.attachChild(ball_geo);
+        /**
+         * Position the cannon ball
+         */
+        Vector3f camLocation = getCamera().getLocation();
+        ball_geo.setLocalTranslation(getCamera().getDirection().scaleAdd(3, camLocation));
+        //ball_geo.setLocalTranslation(cam.getLocation());
+        /**
+         * Make the ball physical with a mass > 0.0f
+         */
+        ball_phy = new RigidBodyControl(1f);
+        /**
+         * Add physical ball to physics space.
+         */
+        ball_geo.addControl(ball_phy);
+        bulletAppState.getPhysicsSpace().add(ball_phy);
+        /**
+         * Accelerate the physical ball to shoot it.
+         */
+        ball_phy.setLinearVelocity(cam.getDirection().mult(25));
     }
 
     private void initSinbad() {
@@ -242,37 +246,7 @@ public class Main extends SimpleApplication implements AnimEventListener{
         guiNode.attachChild(ch);
     }
     
-    public void makeCannonBall() {
-        /**
-         * Create a cannon ball geometry and attach to scene graph.
-         */
-        Geometry ball_geo = new Geometry("cannon ball", bullet);
-        ball_geo.setMaterial(stone_mat);
-        rootNode.attachChild(ball_geo);
-        /**
-         * Position the cannon ball
-         */
-        ball_geo.setLocalTranslation(player.getPhysicsLocation());
-        /**
-         * Make the ball physical with a mass > 0.0f
-         */
-        bullet_phy = new RigidBodyControl(0.1f);
-        bulletCollisionShape = new SphereCollisionShape(0.4f);
-        RigidBodyControl bulletNode = new RigidBodyControl(bulletCollisionShape, 1);
-        bulletNode.setLinearVelocity(cam.getDirection().mult(25));
-        
-        /**
-         * Add physical ball to physics space.
-         */
-        ball_geo.addControl(bulletNode);
-        rootNode.attachChild(ball_geo);
-        bulletAppState.getPhysicsSpace().add(bulletNode);
-        /**
-         * Accelerate the physical ball to shoot it.
-         */
-        //inearVelocity(cam.getDirection().mult(100));
-    }
-
+    
     private void initMaterials() {
         stone_mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
         TextureKey key2 = new TextureKey("Textures/Terrain/Rock/Rock.PNG");
@@ -342,10 +316,6 @@ public class Main extends SimpleApplication implements AnimEventListener{
             boxGeo.setMaterial(boxMat);
             boxGeo.move(0f,-1f, 0f);
             
-            //Texture dirt = assetManager.loadTexture("Textures/Blood.png");
-            //dirt.setWrap(WrapMode.Repeat);
-            //boxMat.setTexture("ColorMap", dirt);
-            //boxMat.setFloat("Tex2Scale", 32f);
         } else {
             boxGeo = new Geometry("Bloco", boxMesh); 
             Material boxMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
@@ -356,15 +326,14 @@ public class Main extends SimpleApplication implements AnimEventListener{
             boxGeo.setMaterial(boxMat);
         }
 
-        rootNode.attachChild(boxGeo);
-
         RigidBodyControl r = new RigidBodyControl(0);
             
         boxGeo.addControl(r);
 
         boxGeo.move(-40 + x * 2, chao, -40 + z * 2);
         r.setPhysicsLocation(boxGeo.getLocalTranslation());
-
+        
+        rootNode.attachChild(boxGeo);
         bulletAppState.getPhysicsSpace().add(r);
     }
 
@@ -385,8 +354,7 @@ public class Main extends SimpleApplication implements AnimEventListener{
         gun.scale(0.1f);
         rootNode.attachChild(gun);
         
-        
-        CapsuleCollisionShape capsuleShape = new CapsuleCollisionShape(4f, 1f, 1);
+        CapsuleCollisionShape capsuleShape = new CapsuleCollisionShape(2f, 2f, 1);
         player = new CharacterControl(capsuleShape, 0.05f);
         player.setJumpSpeed(10);
         player.setFallSpeed(30);
@@ -406,5 +374,25 @@ public class Main extends SimpleApplication implements AnimEventListener{
         gun.move(cam.getUp().mult(-0.5f));
         gun.move(cam.getLeft().mult(1f));
         gun.rotate(0.1f, FastMath.PI * 1.45f, 0.07f);
+    }
+
+    private void colisaoPlayer() {
+        camDir.set(cam.getDirection()).multLocal(0.6f);
+        camLeft.set(cam.getLeft()).multLocal(0.4f);
+        walkDirection.set(0, 0, 0);
+        if (left) {
+            walkDirection.addLocal(camLeft);
+        }
+        if (right) {
+            walkDirection.addLocal(camLeft.negate());
+        }
+        if (up) {
+            walkDirection.addLocal(camDir);
+        }
+        if (down) {
+            walkDirection.addLocal(camDir.negate());
+        }
+        player.setWalkDirection(walkDirection);
+        cam.setLocation(player.getPhysicsLocation());
     }
 }

@@ -17,6 +17,7 @@ import com.jme3.input.KeyInput;
 import com.jme3.input.controls.ActionListener;
 import com.jme3.input.controls.KeyTrigger;
 import com.jme3.input.controls.MouseButtonTrigger;
+import com.jme3.light.AmbientLight;
 import com.jme3.light.DirectionalLight;
 import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
@@ -24,6 +25,8 @@ import com.jme3.math.FastMath;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Vector2f;
 import com.jme3.math.Vector3f;
+import com.jme3.post.FilterPostProcessor;
+import com.jme3.post.ssao.SSAOFilter;
 import com.jme3.renderer.RenderManager;
 import com.jme3.renderer.queue.RenderQueue;
 import com.jme3.scene.Geometry;
@@ -31,6 +34,8 @@ import com.jme3.scene.Spatial;
 import com.jme3.scene.shape.Box;
 import com.jme3.scene.shape.Sphere;
 import com.jme3.scene.shape.Sphere.TextureMode;
+import com.jme3.shadow.DirectionalLightShadowFilter;
+import com.jme3.shadow.DirectionalLightShadowRenderer;
 import com.jme3.system.AppSettings;
 import com.jme3.texture.Texture;
 import com.sun.media.sound.ModelSource;
@@ -235,6 +240,32 @@ public class Main extends SimpleApplication implements AnimEventListener{
                 (new Vector3f(-0.5f, -0.5f, -0.5f)).normalizeLocal());
         sun.setColor(ColorRGBA.White);
         rootNode.addLight(sun);
+        
+        AmbientLight al = new AmbientLight();
+        al.setColor(ColorRGBA.White.mult(1.3f));
+        rootNode.addLight(al);
+        
+        DirectionalLight sun2 = new DirectionalLight();
+        sun2.setColor(ColorRGBA.White);
+        sun2.setDirection(cam.getDirection());
+        rootNode.addLight(sun2);
+        
+        final int SHADOWMAP_SIZE = 1024;
+        DirectionalLightShadowRenderer dlsr = new DirectionalLightShadowRenderer(assetManager, SHADOWMAP_SIZE, 3);
+        dlsr.setLight(sun2);
+        viewPort.addProcessor(dlsr);
+
+        DirectionalLightShadowFilter dlsf = new DirectionalLightShadowFilter(assetManager, SHADOWMAP_SIZE, 3);
+        dlsf.setLight(sun2);
+        dlsf.setEnabled(true);
+        FilterPostProcessor fpp = new FilterPostProcessor(assetManager);
+        fpp.addFilter(dlsf);
+        viewPort.addProcessor(fpp);
+        
+        FilterPostProcessor fpp2 = new FilterPostProcessor(assetManager);
+        SSAOFilter ssaoFilter = new SSAOFilter(12.94f, 43.92f, 0.33f, 0.61f);
+        fpp2.addFilter(ssaoFilter);
+        viewPort.addProcessor(fpp2);
     }
 
     private void initCrosshairs() {
@@ -311,7 +342,7 @@ public class Main extends SimpleApplication implements AnimEventListener{
         if (chao == -1) {
             boxGeo = new Geometry("BlocoChao", boxMesh);
             Material boxMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-            Texture cube1Tex = assetManager.loadTexture("Textures/FloorTexture.jpg");
+            Texture cube1Tex = assetManager.loadTexture("Textures/FloorTexture1.jpg");
             boxMat.setTexture("ColorMap", cube1Tex);
             boxGeo.setMaterial(boxMat);
             boxGeo.move(0f,-1f, 0f);
@@ -319,7 +350,7 @@ public class Main extends SimpleApplication implements AnimEventListener{
         } else {
             boxGeo = new Geometry("Bloco", boxMesh); 
             Material boxMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-            Texture cube2Tex = assetManager.loadTexture("Textures/WallTexture.jpg");
+            Texture cube2Tex = assetManager.loadTexture("Textures/WallTexture1.jpg");
             boxMat.setTexture("ColorMap", cube2Tex);
             //boxGeo.scale(1f, 3.0f, 1f);
             boxGeo.setMaterial(boxMat);

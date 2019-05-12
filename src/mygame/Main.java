@@ -9,7 +9,6 @@ import com.jme3.asset.TextureKey;
 import com.jme3.audio.AudioData.DataType;
 import com.jme3.audio.AudioNode;
 import com.jme3.bullet.BulletAppState;
-import com.jme3.bullet.collision.PhysicsCollisionListener;
 import com.jme3.bullet.collision.shapes.CapsuleCollisionShape;
 import com.jme3.bullet.collision.shapes.SphereCollisionShape;
 import com.jme3.bullet.control.CharacterControl;
@@ -25,12 +24,10 @@ import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
 import com.jme3.math.FastMath;
 import com.jme3.math.Quaternion;
-import com.jme3.math.Vector2f;
 import com.jme3.math.Vector3f;
 import com.jme3.post.FilterPostProcessor;
 import com.jme3.post.ssao.SSAOFilter;
 import com.jme3.renderer.RenderManager;
-import com.jme3.renderer.queue.RenderQueue;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Spatial;
 import com.jme3.scene.shape.Box;
@@ -38,10 +35,8 @@ import com.jme3.scene.shape.Sphere;
 import com.jme3.scene.shape.Sphere.TextureMode;
 import com.jme3.shadow.DirectionalLightShadowFilter;
 import com.jme3.shadow.DirectionalLightShadowRenderer;
-import com.jme3.system.AppSettings;
 import com.jme3.texture.Texture;
-import com.sun.media.sound.ModelSource;
-import java.util.ArrayList;
+
 
 /**
  * This is the Main Class of your Game. You should only do initialization here.
@@ -52,6 +47,7 @@ public class Main extends SimpleApplication implements AnimEventListener{
     
     //Material
     Material stone_mat;
+    Material gun_mat;
     
     //Player
     private CharacterControl player;
@@ -83,7 +79,7 @@ public class Main extends SimpleApplication implements AnimEventListener{
         /**
          * Initialize the cannon ball geometry
          */
-        sphere = new Sphere(32, 32, 0.4f, true, false);
+        sphere = new Sphere(16, 16, 0.1f, true, false);
         sphere.setTextureMode(TextureMode.Projected);
     }
     
@@ -96,14 +92,45 @@ public class Main extends SimpleApplication implements AnimEventListener{
     @Override
     public void simpleInitApp() {
         initKeys();
+        initMaterials();
         initPhysics();
         initPlayer();
-        initMaterials();
         //initSinbad();
         initLight();
         initMap();
         initCrosshairs();
         initAudio();
+        
+    }
+               
+    @Override
+    public void simpleUpdate(float tpf) {
+        //prende a arma na camera
+        setGun();
+        
+        colisaoPlayer();
+    }
+    
+    private void initPlayer() {
+        //mudar localização do personagem ao iniciar o jogo
+        cam.setLocation(new Vector3f(-20f, 1f, -20f));
+        //velocidade da camera
+        flyCam.setMoveSpeed(10);
+        
+        //Arma
+        gun = assetManager.loadModel("Models/Gun/AKcomTextura.obj");
+        gun.setMaterial(gun_mat);
+        gun.scale(0.1f);
+        rootNode.attachChild(gun);
+        
+        CapsuleCollisionShape capsuleShape = new CapsuleCollisionShape(2f, 2f, 1);
+        player = new CharacterControl(capsuleShape, 0.05f);
+        player.setViewDirection(cam.getDirection());
+        player.setJumpSpeed(10);
+        player.setFallSpeed(30);
+        player.setGravity(new Vector3f(0,-30f,0));
+        player.setPhysicsLocation(new Vector3f(-20f, 10f, -20f));
+        bulletAppState.getPhysicsSpace().add(player);
         
     }
     
@@ -172,14 +199,6 @@ public class Main extends SimpleApplication implements AnimEventListener{
             }
         }
     };
-               
-    @Override
-    public void simpleUpdate(float tpf) {
-        //prende a arma na camera
-        setGun();
-        
-        colisaoPlayer();
-    }
 
     @Override
     public void simpleRender(RenderManager rm) {
@@ -221,7 +240,7 @@ public class Main extends SimpleApplication implements AnimEventListener{
         /**
          * Accelerate the physical ball to shoot it.
          */
-        ball_phy.setLinearVelocity(cam.getDirection().mult(25));
+        ball_phy.setLinearVelocity(cam.getDirection().mult(100));
     }
 
     private void initSinbad(float x, float y, int chao) {
@@ -290,6 +309,10 @@ public class Main extends SimpleApplication implements AnimEventListener{
         key2.setGenerateMips(true);
         Texture tex2 = assetManager.loadTexture(key2);
         stone_mat.setTexture("ColorMap", tex2);
+        
+        gun_mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        Texture gun_text = assetManager.loadTexture("Textures/TexturaAK.png");
+        gun_mat.setTexture("ColorMap", gun_text);
     }
     
     private void initAudio() {
@@ -387,25 +410,7 @@ public class Main extends SimpleApplication implements AnimEventListener{
         stateManager.attach(bulletAppState);
     }
 
-    private void initPlayer() {
-        //mudar localização do personagem ao iniciar o jogo
-        cam.setLocation(new Vector3f(-20f, 1f, -20f));
-        //velocidade da camera
-        flyCam.setMoveSpeed(10);
-        
-        //Arma
-        gun = assetManager.loadModel("Models/Gun/AK.obj");
-        gun.scale(0.1f);
-        rootNode.attachChild(gun);
-        
-        CapsuleCollisionShape capsuleShape = new CapsuleCollisionShape(2f, 2f, 1);
-        player = new CharacterControl(capsuleShape, 0.05f);
-        player.setJumpSpeed(10);
-        player.setFallSpeed(30);
-        player.setGravity(new Vector3f(0,-30f,0));
-        player.setPhysicsLocation(new Vector3f(-20f, 10f, -20f));
-        bulletAppState.getPhysicsSpace().add(player);
-    }
+    
 
     private void setGun() {
         Vector3f vectorDifference = new Vector3f(cam.getLocation().subtract(gun.getWorldTranslation()));
@@ -414,15 +419,15 @@ public class Main extends SimpleApplication implements AnimEventListener{
         Quaternion worldDiff = new Quaternion(cam.getRotation().mult(gun.getWorldRotation().inverse()));
         gun.setLocalRotation(worldDiff.multLocal(gun.getLocalRotation()));
         
-        gun.move(cam.getDirection().mult(1.5f));
-        gun.move(cam.getUp().mult(-0.5f));
+        gun.move(cam.getDirection().mult(1.8f));
+        gun.move(cam.getUp().mult(-0.4f));
         gun.move(cam.getLeft().mult(1f));
-        gun.rotate(0.1f, FastMath.PI * 1.45f, 0.07f);
+        gun.rotate(0.1f, FastMath.PI * 1.45f, 0.08f);
     }
 
     private void colisaoPlayer() {
-        camDir.set(cam.getDirection()).multLocal(0.6f);
-        camLeft.set(cam.getLeft()).multLocal(0.4f);
+        camDir.set(cam.getDirection()).multLocal(0.12f);
+        camLeft.set(cam.getLeft()).multLocal(0.12f);
         walkDirection.set(0, 0, 0);
         if (left) {
             walkDirection.addLocal(camLeft);
@@ -436,6 +441,7 @@ public class Main extends SimpleApplication implements AnimEventListener{
         if (down) {
             walkDirection.addLocal(camDir.negate());
         }
+        walkDirection.multLocal(2f);
         player.setWalkDirection(walkDirection);
         cam.setLocation(player.getPhysicsLocation());
     }

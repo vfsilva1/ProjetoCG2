@@ -297,8 +297,9 @@ public class Main extends SimpleApplication implements AnimEventListener{
         setDisplayStatView(false);
         BitmapText ch = new BitmapText(guiFont, false);
         ch.setSize(guiFont.getCharSet().getRenderedSize() * 2);
-        ch.setText("+"); //mira       
-        ch.setLocalTranslation(settings.getWidth() / 2, settings.getHeight() / 2, 0); //center
+        ch.setText("."); //mira     
+        ch.setColor(ColorRGBA.Green);
+        ch.setLocalTranslation(settings.getWidth() / 2 -5, settings.getHeight() / 2 + 28, 0); //center
         guiNode.attachChild(ch);
     }
     
@@ -419,10 +420,10 @@ public class Main extends SimpleApplication implements AnimEventListener{
         Quaternion worldDiff = new Quaternion(cam.getRotation().mult(gun.getWorldRotation().inverse()));
         gun.setLocalRotation(worldDiff.multLocal(gun.getLocalRotation()));
         
-        gun.move(cam.getDirection().mult(1.8f));
-        gun.move(cam.getUp().mult(-0.4f));
-        gun.move(cam.getLeft().mult(1f));
-        gun.rotate(0.1f, FastMath.PI * 1.45f, 0.08f);
+        gun.move(cam.getDirection().mult(2.5f));
+        gun.move(cam.getUp().mult(-0.5f));
+        gun.move(cam.getLeft().mult(1.3f));
+        gun.rotate(0.1f, FastMath.PI * 1.45f, 0.13f);
     }
 
     private void colisaoPlayer() {

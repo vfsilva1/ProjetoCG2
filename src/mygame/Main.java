@@ -6,6 +6,8 @@ import com.jme3.animation.AnimEventListener;
 import com.jme3.animation.LoopMode;
 import com.jme3.app.SimpleApplication;
 import com.jme3.asset.TextureKey;
+import com.jme3.audio.AudioData.DataType;
+import com.jme3.audio.AudioNode;
 import com.jme3.bullet.BulletAppState;
 import com.jme3.bullet.collision.PhysicsCollisionListener;
 import com.jme3.bullet.collision.shapes.CapsuleCollisionShape;
@@ -39,6 +41,7 @@ import com.jme3.shadow.DirectionalLightShadowRenderer;
 import com.jme3.system.AppSettings;
 import com.jme3.texture.Texture;
 import com.sun.media.sound.ModelSource;
+import java.util.ArrayList;
 
 /**
  * This is the Main Class of your Game. You should only do initialization here.
@@ -73,6 +76,9 @@ public class Main extends SimpleApplication implements AnimEventListener{
     private RigidBodyControl ball_phy;
     private static final Sphere sphere;
     
+    //Efeitos sonoros 
+    private AudioNode audio_gun;
+    
     static {
         /**
          * Initialize the cannon ball geometry
@@ -97,6 +103,7 @@ public class Main extends SimpleApplication implements AnimEventListener{
         initLight();
         initMap();
         initCrosshairs();
+        initAudio();
         
     }
     
@@ -149,6 +156,7 @@ public class Main extends SimpleApplication implements AnimEventListener{
             }
             if (name.equals("shoot") && !keyPressed) {
                  makeCannonBall();
+                 audio_gun.playInstance();
             }
             if (name.equals("Left")) {
             if (keyPressed) { left = true; } else { left = false; }
@@ -164,16 +172,13 @@ public class Main extends SimpleApplication implements AnimEventListener{
             }
         }
     };
-            
-    
+               
     @Override
     public void simpleUpdate(float tpf) {
         //prende a arma na camera
         setGun();
         
         colisaoPlayer();
-        
-        
     }
 
     @Override
@@ -219,10 +224,11 @@ public class Main extends SimpleApplication implements AnimEventListener{
         ball_phy.setLinearVelocity(cam.getDirection().mult(25));
     }
 
-    private void initSinbad() {
+    private void initSinbad(float x, float y, int chao) {
         sinbad = assetManager.loadModel("Models/Sinbad/Sinbad.mesh.xml");
         sinbad.setLocalScale(0.5f);
         sinbad.setLocalTranslation(0.0f, 0.0f, -2.0f);
+        sinbad.move(x, y, 0f);
         rootNode.attachChild(sinbad);
         
         control1 = sinbad.getControl(AnimControl.class);
@@ -285,7 +291,15 @@ public class Main extends SimpleApplication implements AnimEventListener{
         Texture tex2 = assetManager.loadTexture(key2);
         stone_mat.setTexture("ColorMap", tex2);
     }
-
+    
+    private void initAudio() {
+        audio_gun = new AudioNode(assetManager, "Sounds/Gun_Shot.wav", DataType.Buffer);
+        audio_gun.setPositional(false);
+        audio_gun.setLooping(false);
+        audio_gun.setVolume(2);
+        rootNode.attachChild(audio_gun);
+    }
+    
     private void initMap() {
         int map[][] = {
             {1, 1, 1, 1, 1, 1, 4, 4, 1, 1, 1, 1, 4, 4, 1, 1, 1, 1, 1, 1},
@@ -322,17 +336,16 @@ public class Main extends SimpleApplication implements AnimEventListener{
                 if (map[i][j] == 2) {
                     
                 }
-                /*if(map[i][j] == 4) { 
-                  sinbad = assetManager.loadModel("Models/Sinbad/Sinbad.mesh.xml");
-                  sinbad.setLocalScale(0.5f);
-                  sinbad.setLocalTranslation(2.0f, 0.0f, 0.0f);
-                  rootNode.attachChild(sinbad);
-                  
-                  OrcsList.add(orcs);
-                }*/
+                if(map[i][j] == 4) {
+                  //sinbad = assetManager.loadModel("Models/Sinbad/Sinbad.mesh.xml");
+                  //sinbad.setLocalScale(0.5f);
+                  //sinbad.setLocalTranslation(2.0f, 0.0f, 0.0f);
+                  //rootNode.attachChild(sinbad);
+  
+                  //orcsList.add(Orc);
+                }
             }
-        }
-        
+        }   
     }
 
     private void criarParedeChao(int x, int z, int chao, float y) {

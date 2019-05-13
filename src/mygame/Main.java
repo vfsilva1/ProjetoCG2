@@ -36,7 +36,7 @@ import com.jme3.scene.shape.Sphere.TextureMode;
 import com.jme3.shadow.DirectionalLightShadowFilter;
 import com.jme3.shadow.DirectionalLightShadowRenderer;
 import com.jme3.texture.Texture;
-
+import com.jme3.util.SkyFactory;
 
 /**
  * This is the Main Class of your Game. You should only do initialization here.
@@ -100,6 +100,7 @@ public class Main extends SimpleApplication implements AnimEventListener{
         initMap();
         initCrosshairs();
         initAudio();
+        initScene();
         
     }
                
@@ -299,11 +300,14 @@ public class Main extends SimpleApplication implements AnimEventListener{
         ch.setSize(guiFont.getCharSet().getRenderedSize() * 2);
         ch.setText("."); //mira     
         ch.setColor(ColorRGBA.Green);
-        ch.setLocalTranslation(settings.getWidth() / 2 -5, settings.getHeight() / 2 + 28, 0); //center
+        ch.setLocalTranslation(settings.getWidth() / 2 - 5, settings.getHeight() / 2 + 28, 0); //center
         guiNode.attachChild(ch);
     }
     
-    
+    private void initScene() {
+        getRootNode().attachChild(SkyFactory.createSky(getAssetManager(), "Textures/Sky/Bright/BrightSky.dds", SkyFactory.EnvMapType.CubeMap));
+    }
+     
     private void initMaterials() {
         stone_mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
         TextureKey key2 = new TextureKey("Textures/Terrain/Rock/Rock.PNG");
@@ -357,9 +361,9 @@ public class Main extends SimpleApplication implements AnimEventListener{
                 if (map[i][j] == 1) {
                     criarParedeChao(i, j, 1, 3f);
                 }
-                if (map[i][j] == 2) {
+                //if (map[i][j] == 2) {
                     
-                }
+                //}
                 if(map[i][j] == 4) {
                   //sinbad = assetManager.loadModel("Models/Sinbad/Sinbad.mesh.xml");
                   //sinbad.setLocalScale(0.5f);

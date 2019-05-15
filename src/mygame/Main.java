@@ -231,12 +231,15 @@ public class Main extends SimpleApplication implements AnimEventListener{
         /**
          * Make the ball physical with a mass > 0.0f
          */
-        ball_phy = new RigidBodyControl(1f);
+        ball_phy = new RigidBodyControl(5f);
+        
         /**
          * Add physical ball to physics space.
          */
         ball_geo.addControl(ball_phy);
         bulletAppState.getPhysicsSpace().add(ball_phy);
+        ball_phy.setCcdSweptSphereRadius(.1f);
+        ball_phy.setCcdMotionThreshold(0.001f);
         /**
          * Accelerate the physical ball to shoot it.
          */
@@ -260,28 +263,22 @@ public class Main extends SimpleApplication implements AnimEventListener{
     }
 
     private void initLight() {
-        DirectionalLight sun = new DirectionalLight();
-        sun.setDirection(
-                (new Vector3f(-0.5f, -0.5f, -0.5f)).normalizeLocal());
-        sun.setColor(ColorRGBA.White);
-        rootNode.addLight(sun);
-        
         AmbientLight al = new AmbientLight();
         al.setColor(ColorRGBA.White.mult(1.3f));
         rootNode.addLight(al);
         
-        DirectionalLight sun2 = new DirectionalLight();
-        sun2.setColor(ColorRGBA.White);
-        sun2.setDirection(cam.getDirection());
-        rootNode.addLight(sun2);
+        DirectionalLight sun = new DirectionalLight();
+        sun.setColor(ColorRGBA.White);
+        sun.setDirection(cam.getDirection().setY(10f));
+        rootNode.addLight(sun);
         
         final int SHADOWMAP_SIZE = 1024;
         DirectionalLightShadowRenderer dlsr = new DirectionalLightShadowRenderer(assetManager, SHADOWMAP_SIZE, 3);
-        dlsr.setLight(sun2);
+        dlsr.setLight(sun);
         viewPort.addProcessor(dlsr);
 
         DirectionalLightShadowFilter dlsf = new DirectionalLightShadowFilter(assetManager, SHADOWMAP_SIZE, 3);
-        dlsf.setLight(sun2);
+        dlsf.setLight(sun);
         dlsf.setEnabled(true);
         FilterPostProcessor fpp = new FilterPostProcessor(assetManager);
         fpp.addFilter(dlsf);
@@ -404,13 +401,17 @@ public class Main extends SimpleApplication implements AnimEventListener{
         sinbad.setLocalScale(0.4f);
         sinbad.move(0f, -3.5f ,0f);
         sinbad.move(-40 + x * 2, chao, -40 + z * 2);
-        rootNode.attachChild(sinbad);
-          
+        
+        RigidBodyControl r2 = new RigidBodyControl();
+        sinbad.addControl(r2);
+        r2.setPhysicsLocation(sinbad.getLocalTranslation());
+        bulletAppState.getPhysicsSpace().add(r2);
+        rootNode.attachChild(sinbad); 
     }
 
     private void initPhysics() {
         bulletAppState = new BulletAppState();
-//        bulletAppState.setDebugEnabled(true);
+        //bulletAppState.setDebugEnabled(true);
         stateManager.attach(bulletAppState);
     }
 

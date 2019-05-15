@@ -57,6 +57,8 @@ public class Main extends SimpleApplication implements AnimEventListener{
     private Vector3f walkDirection = new Vector3f();
     private boolean left = false, right = false, up = false, down = false;
     
+    private Vector3f vectorDifference;
+    
     //Inimigo
     private Spatial sinbad;
     private AnimControl control1;
@@ -106,10 +108,7 @@ public class Main extends SimpleApplication implements AnimEventListener{
                
     @Override
     public void simpleUpdate(float tpf) {
-        //prende a arma na camera
-        setGun();
-        
-        colisaoPlayer();
+        movePlayer();
     }
     
     private void initPlayer() {
@@ -430,7 +429,7 @@ public class Main extends SimpleApplication implements AnimEventListener{
         gun.rotate(0.1f, FastMath.PI * 1.45f, 0.13f);
     }
 
-    private void colisaoPlayer() {
+    private void movePlayer() {
         camDir.set(cam.getDirection()).multLocal(0.12f);
         camLeft.set(cam.getLeft()).multLocal(0.12f);
         walkDirection.set(0, 0, 0);
@@ -449,5 +448,7 @@ public class Main extends SimpleApplication implements AnimEventListener{
         walkDirection.multLocal(2f);
         player.setWalkDirection(walkDirection);
         cam.setLocation(player.getPhysicsLocation());
+        
+        setGun();
     }
 }

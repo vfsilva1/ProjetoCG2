@@ -360,16 +360,8 @@ public class Main extends SimpleApplication implements AnimEventListener{
                 if (map[i][j] == 1) {
                     criarParedeChao(i, j, 1, 3f);
                 }
-                //if (map[i][j] == 2) {
-                    
-                //}
                 if(map[i][j] == 4) {
-                  //sinbad = assetManager.loadModel("Models/Sinbad/Sinbad.mesh.xml");
-                  //sinbad.setLocalScale(0.5f);
-                  //sinbad.setLocalTranslation(2.0f, 0.0f, 0.0f);
-                  //rootNode.attachChild(sinbad);
-  
-                  //orcsList.add(Orc);
+                    criarOrc(i, j, 4);
                 }
             }
         }   
@@ -392,7 +384,6 @@ public class Main extends SimpleApplication implements AnimEventListener{
             Material boxMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
             Texture cube2Tex = assetManager.loadTexture("Textures/WallTexture1.jpg");
             boxMat.setTexture("ColorMap", cube2Tex);
-            //boxGeo.scale(1f, 3.0f, 1f);
             boxGeo.setMaterial(boxMat);
             boxGeo.setMaterial(boxMat);
         }
@@ -407,14 +398,21 @@ public class Main extends SimpleApplication implements AnimEventListener{
         rootNode.attachChild(boxGeo);
         bulletAppState.getPhysicsSpace().add(r);
     }
+    
+    private void criarOrc(int x, int z, int chao) {
+        sinbad = assetManager.loadModel("Models/Sinbad/Sinbad.mesh.xml");
+        sinbad.setLocalScale(0.4f);
+        sinbad.move(0f, -3.5f ,0f);
+        sinbad.move(-40 + x * 2, chao, -40 + z * 2);
+        rootNode.attachChild(sinbad);
+          
+    }
 
     private void initPhysics() {
         bulletAppState = new BulletAppState();
 //        bulletAppState.setDebugEnabled(true);
         stateManager.attach(bulletAppState);
     }
-
-    
 
     private void setGun() {
         Vector3f vectorDifference = new Vector3f(cam.getLocation().subtract(gun.getWorldTranslation()));

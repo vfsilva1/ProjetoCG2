@@ -48,6 +48,7 @@ public class Main extends SimpleApplication implements AnimEventListener{
     //Material
     Material stone_mat;
     Material gun_mat;
+    Material zombie_mat;
     
     //Player
     private CharacterControl player;
@@ -60,7 +61,7 @@ public class Main extends SimpleApplication implements AnimEventListener{
     private Vector3f vectorDifference;
     
     //Inimigo
-    private Spatial sinbad;
+    private Spatial zumbi;
     private AnimControl control1;
     private AnimChannel channel1;
     
@@ -98,7 +99,7 @@ public class Main extends SimpleApplication implements AnimEventListener{
         initMaterials();
         initPhysics();
         initPlayer();
-        //initSinbad();
+        initZumbi();
         initLight();
         initMap();
         initCrosshairs();
@@ -247,18 +248,13 @@ public class Main extends SimpleApplication implements AnimEventListener{
         ball_phy.setLinearVelocity(cam.getDirection().mult(1000));
     }
 
-    private void initSinbad(float x, float y, int chao) {
-        sinbad = assetManager.loadModel("Models/Sinbad/Sinbad.mesh.xml");
-        sinbad.setLocalScale(0.5f);
-        sinbad.setLocalTranslation(0.0f, 0.0f, -2.0f);
-        sinbad.move(x, y, 0f);
-        rootNode.attachChild(sinbad);
+    private void initZumbi() {
         
-        control1 = sinbad.getControl(AnimControl.class);
+        
+        /*control1 = zumbi.getControl(AnimControl.class);
         control1.addListener(this);
-        
         channel1 = control1.createChannel();
-        channel1.setAnim("RunTop");
+        channel1.setAnim("RunTop");*/
         
         //System.out.println(control1.getAnimationNames());
     }
@@ -315,6 +311,10 @@ public class Main extends SimpleApplication implements AnimEventListener{
         gun_mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
         Texture gun_text = assetManager.loadTexture("Textures/TexturaAK.png");
         gun_mat.setTexture("ColorMap", gun_text);
+        
+        zombie_mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        Texture zombie_text = assetManager.loadTexture("Textures/Zumbi/3_Albedo.tga");
+        zombie_mat.setTexture("ColorMap", zombie_text);
     }
     
     private void initAudio() {
@@ -344,7 +344,7 @@ public class Main extends SimpleApplication implements AnimEventListener{
                     criarParedeChao(i, j, 1, 3f);
                 }
                 if(map[i][j] == 4) {
-                    criarOrc(i, j, 4);
+                    criarZumbi(i, j, 4);
                 }
             }
         }   
@@ -382,17 +382,17 @@ public class Main extends SimpleApplication implements AnimEventListener{
         bulletAppState.getPhysicsSpace().add(r);
     }
     
-    private void criarOrc(int x, int z, int chao) {
-        sinbad = assetManager.loadModel("Models/Sinbad/Sinbad.mesh.xml");
-        sinbad.setLocalScale(0.4f);
-        sinbad.move(0f, -3.5f ,0f);
-        sinbad.move(-40 + x * 2, chao, -40 + z * 2);
-        
+    private void criarZumbi(int x, int z, int chao) {
+        zumbi = assetManager.loadModel("Models/Zumbi/ZombieMesh.obj");
+        zumbi.setMaterial(zombie_mat);
+        zumbi.setLocalScale(0.023f);
+        zumbi.move(0f, -3.5f ,0f);
+        zumbi.move(-40 + x * 2, chao, -40 + z * 2);
         RigidBodyControl r2 = new RigidBodyControl();
-        sinbad.addControl(r2);
-        r2.setPhysicsLocation(sinbad.getLocalTranslation());
+        zumbi.addControl(r2);
+        r2.setPhysicsLocation(zumbi.getLocalTranslation());
         bulletAppState.getPhysicsSpace().add(r2);
-        rootNode.attachChild(sinbad); 
+        rootNode.attachChild(zumbi);
     }
 
     private void initPhysics() {

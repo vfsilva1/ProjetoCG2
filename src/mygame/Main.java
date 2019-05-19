@@ -325,11 +325,11 @@ public class Main extends SimpleApplication implements AnimEventListener{
         rootNode.attachChild(audio_gun);
         
         audio_background = new AudioNode(assetManager, "Sounds/ZombieBackground.wav", DataType.Buffer);
-        audio_background.setPositional(false);
         audio_background.setLooping(true);
+        audio_background.setPositional(false);
         audio_background.setVolume(2);
         rootNode.attachChild(audio_background);
-        audio_background.playInstance();
+        audio_background.play();
     }
     
     private void initMap() {
@@ -392,6 +392,9 @@ public class Main extends SimpleApplication implements AnimEventListener{
         zumbi.addControl(r2);
         r2.setPhysicsLocation(zumbi.getLocalTranslation());
         bulletAppState.getPhysicsSpace().add(r2);
+        //if(bulletAppState.equals(zumbi.getParent())) {
+        //    zumbi.removeFromParent();
+        //}
         rootNode.attachChild(zumbi);
     }
 

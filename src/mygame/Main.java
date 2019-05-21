@@ -13,6 +13,7 @@ import com.jme3.bullet.collision.shapes.CapsuleCollisionShape;
 import com.jme3.bullet.collision.shapes.SphereCollisionShape;
 import com.jme3.bullet.control.CharacterControl;
 import com.jme3.bullet.control.RigidBodyControl;
+import com.jme3.collision.CollisionResults;
 import com.jme3.font.BitmapText;
 import com.jme3.input.KeyInput;
 import com.jme3.input.controls.ActionListener;
@@ -37,6 +38,7 @@ import com.jme3.shadow.DirectionalLightShadowFilter;
 import com.jme3.shadow.DirectionalLightShadowRenderer;
 import com.jme3.texture.Texture;
 import com.jme3.util.SkyFactory;
+import java.util.ArrayList;
 
 /**
  * This is the Main Class of your Game. You should only do initialization here.
@@ -64,16 +66,16 @@ public class Main extends SimpleApplication implements AnimEventListener{
     private Spatial zumbi;
     private AnimControl control1;
     private AnimChannel channel1;
+    private ArrayList<Spatial> zumbis = new ArrayList<Spatial>();
     
     //Fisica da aplicaçao
     private BulletAppState bulletAppState;
     
     
     //Fisica da bala
-    private static Sphere bullet;
-    private SphereCollisionShape bulletCollisionShape;
     private RigidBodyControl ball_phy;
     private static final Sphere sphere;
+    private ArrayList<Geometry> balas = new ArrayList<Geometry>();
     
     //Efeitos sonoros 
     private AudioNode audio_gun;
@@ -93,6 +95,8 @@ public class Main extends SimpleApplication implements AnimEventListener{
         app.start();
     }
     
+    
+    
     @Override
     public void simpleInitApp() {
         initKeys();
@@ -107,18 +111,26 @@ public class Main extends SimpleApplication implements AnimEventListener{
         initScene();
         
     }
-               
+    
+    private CollisionResults results = new CollisionResults();         
     @Override
     public void simpleUpdate(float tpf) {
         movePlayer();
+        
+        //colisaoBalaZumbi
+        for (int i = 0; i < zumbis.size(); i++) {
+            for (int j = 0; j < balas.size(); j++) {
+                balas.get(j).collideWith(zumbis.get(i).getWorldBound(), results);
+                if (results.size() > 0) {
+                    zumbis.get(i).removeFromParent();    
+                    balas.get(j).removeFromParent();
+                    results = new CollisionResults(); 
+                }
+            }
+        }
     }
     
     private void initPlayer() {
-        //mudar localização do personagem ao iniciar o jogo
-        cam.setLocation(new Vector3f(-20f, 1f, -20f));
-        //velocidade da camera
-        flyCam.setMoveSpeed(10);
-        
         //Arma
         gun = assetManager.loadModel("Models/Gun/AKcomTextura.obj");
         gun.setMaterial(gun_mat);
@@ -131,9 +143,8 @@ public class Main extends SimpleApplication implements AnimEventListener{
         player.setJumpSpeed(10);
         player.setFallSpeed(30);
         player.setGravity(new Vector3f(0,-30f,0));
-        player.setPhysicsLocation(new Vector3f(-20f, 10f, -20f));
+        player.setPhysicsLocation(new Vector3f(30f, 10f, 0f));
         bulletAppState.getPhysicsSpace().add(player);
-        
     }
     
     private void initKeys() {
@@ -233,8 +244,7 @@ public class Main extends SimpleApplication implements AnimEventListener{
         /**
          * Make the ball physical with a mass > 0.0f
          */
-        ball_phy = new RigidBodyControl(5f);
-        
+        ball_phy = new RigidBodyControl(1f);
         /**
          * Add physical ball to physics space.
          */
@@ -245,12 +255,12 @@ public class Main extends SimpleApplication implements AnimEventListener{
         /**
          * Accelerate the physical ball to shoot it.
          */
-        ball_phy.setLinearVelocity(cam.getDirection().mult(1000));
+        ball_phy.setLinearVelocity(cam.getDirection().mult(100));
+        
+        balas.add(ball_geo);
     }
 
     private void initZumbi() {
-        
-        
         /*control1 = zumbi.getControl(AnimControl.class);
         control1.addListener(this);
         channel1 = control1.createChannel();
@@ -360,7 +370,7 @@ public class Main extends SimpleApplication implements AnimEventListener{
             Texture cube1Tex = assetManager.loadTexture("Textures/FloorTexture1.jpg");
             boxMat.setTexture("ColorMap", cube1Tex);
             boxGeo.setMaterial(boxMat);
-            boxGeo.move(0f,-1f, 0f);
+            boxGeo.setLocalTranslation(0f,-1f, 0f);
             
         } else {
             boxGeo = new Geometry("Bloco", boxMesh); 
@@ -386,16 +396,15 @@ public class Main extends SimpleApplication implements AnimEventListener{
         zumbi = assetManager.loadModel("Models/Zumbi/ZombieMesh.obj");
         zumbi.setMaterial(zombie_mat);
         zumbi.setLocalScale(0.023f);
-        zumbi.move(0f, -3.5f ,0f);
-        zumbi.move(-40 + x * 2, chao, -40 + z * 2);
+        zumbi.setLocalTranslation(-40 + x * 2, chao -5.5f, -40 + z * 2);
+        
         RigidBodyControl r2 = new RigidBodyControl();
         zumbi.addControl(r2);
         r2.setPhysicsLocation(zumbi.getLocalTranslation());
-        bulletAppState.getPhysicsSpace().add(r2);
-        //if(bulletAppState.equals(zumbi.getParent())) {
-        //    zumbi.removeFromParent();
-        //}
+     
+        zumbis.add(zumbi);
         rootNode.attachChild(zumbi);
+        bulletAppState.getPhysicsSpace().add(r2);
     }
 
     private void initPhysics() {

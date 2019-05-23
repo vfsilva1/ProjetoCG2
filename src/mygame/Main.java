@@ -14,6 +14,9 @@ import com.jme3.bullet.collision.shapes.SphereCollisionShape;
 import com.jme3.bullet.control.CharacterControl;
 import com.jme3.bullet.control.RigidBodyControl;
 import com.jme3.collision.CollisionResults;
+import com.jme3.effect.ParticleEmitter;
+import com.jme3.effect.ParticleMesh;
+import com.jme3.effect.shapes.EmitterPointShape;
 import com.jme3.font.BitmapText;
 import com.jme3.input.KeyInput;
 import com.jme3.input.controls.ActionListener;
@@ -36,6 +39,7 @@ import com.jme3.scene.shape.Sphere;
 import com.jme3.scene.shape.Sphere.TextureMode;
 import com.jme3.shadow.DirectionalLightShadowFilter;
 import com.jme3.shadow.DirectionalLightShadowRenderer;
+import com.jme3.system.AppSettings;
 import com.jme3.texture.Texture;
 import com.jme3.util.SkyFactory;
 import java.util.ArrayList;
@@ -89,9 +93,16 @@ public class Main extends SimpleApplication implements AnimEventListener{
         sphere.setTextureMode(TextureMode.Projected);
     }
     
-    public static void main(String[] args) {
+    public static void main(String[] args) { 
+        AppSettings defs = new AppSettings(true);
+        defs.setFullscreen(true);
+        defs.setWidth(1366);
+        defs.setHeight(768);
+        defs.setFrequency(60);
+        
         Main app = new Main();
         app.setShowSettings(false);
+        app.setSettings(defs);
         app.start();
     }
     
@@ -269,15 +280,16 @@ public class Main extends SimpleApplication implements AnimEventListener{
         //System.out.println(control1.getAnimationNames());
     }
 
-    private void initLight() {
-        AmbientLight al = new AmbientLight();
-        al.setColor(ColorRGBA.White.mult(1.3f));
-        rootNode.addLight(al);
-        
+    private void initLight() {        
         DirectionalLight sun = new DirectionalLight();
         sun.setColor(ColorRGBA.White);
         sun.setDirection(cam.getDirection().setY(10f));
         rootNode.addLight(sun);
+        
+        /*
+        AmbientLight al = new AmbientLight();
+        al.setColor(ColorRGBA.White.mult(1.3f));
+        rootNode.addLight(al);
         
         final int SHADOWMAP_SIZE = 1024;
         DirectionalLightShadowRenderer dlsr = new DirectionalLightShadowRenderer(assetManager, SHADOWMAP_SIZE, 3);
@@ -290,6 +302,7 @@ public class Main extends SimpleApplication implements AnimEventListener{
         FilterPostProcessor fpp = new FilterPostProcessor(assetManager);
         fpp.addFilter(dlsf);
         viewPort.addProcessor(fpp);
+        */
         
         FilterPostProcessor fpp2 = new FilterPostProcessor(assetManager);
         SSAOFilter ssaoFilter = new SSAOFilter(12.94f, 43.92f, 0.33f, 0.61f);
@@ -326,7 +339,7 @@ public class Main extends SimpleApplication implements AnimEventListener{
         Texture zombie_text = assetManager.loadTexture("Textures/Zumbi/3_Albedo.tga");
         zombie_mat.setTexture("ColorMap", zombie_text);
     }
-    
+        
     private void initAudio() {
         audio_gun = new AudioNode(assetManager, "Sounds/Gun_Shot.wav", DataType.Buffer);
         audio_gun.setPositional(false);
@@ -371,6 +384,25 @@ public class Main extends SimpleApplication implements AnimEventListener{
             boxMat.setTexture("ColorMap", cube1Tex);
             boxGeo.setMaterial(boxMat);
             boxGeo.setLocalTranslation(0f,-1f, 0f);
+            
+            ParticleEmitter fog = new ParticleEmitter("Emitter", ParticleMesh.Type.Triangle, 30);
+            Material mat_red = new Material(assetManager, "Common/MatDefs/Misc/Particle.j3md");
+            mat_red.setTexture("Texture", assetManager.loadTexture("Effects/Smoke/Smoke.png"));
+            fog.setMaterial(mat_red);
+            fog.setImagesX(1);
+            fog.setImagesY(15); // 2x2 texture animation
+            fog.setEndColor(  new ColorRGBA(204f,204f,204f,0.2f));   // red
+            fog.setStartColor(new ColorRGBA(204f,204f,204f,0.2f)); // yellow
+            fog.getParticleInfluencer().setInitialVelocity(new Vector3f(0, 2, 0));
+            fog.setStartSize(1.0f);
+            fog.setEndSize(0.1f);
+            fog.setGravity(0, 1, 0);
+            fog.setLowLife(1f);
+            fog.setHighLife(3f);
+            fog.getParticleInfluencer().setVelocityVariation(0.2f);
+            fog.move(-40 + x * 2, chao, -40 + z * 2);
+            fog.setNumParticles(5);
+            rootNode.attachChild(fog);
             
         } else {
             boxGeo = new Geometry("Bloco", boxMesh); 

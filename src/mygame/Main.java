@@ -10,13 +10,11 @@ import com.jme3.audio.AudioData.DataType;
 import com.jme3.audio.AudioNode;
 import com.jme3.bullet.BulletAppState;
 import com.jme3.bullet.collision.shapes.CapsuleCollisionShape;
-import com.jme3.bullet.collision.shapes.SphereCollisionShape;
 import com.jme3.bullet.control.CharacterControl;
 import com.jme3.bullet.control.RigidBodyControl;
 import com.jme3.collision.CollisionResults;
 import com.jme3.effect.ParticleEmitter;
 import com.jme3.effect.ParticleMesh;
-import com.jme3.effect.shapes.EmitterPointShape;
 import com.jme3.font.BitmapText;
 import com.jme3.input.KeyInput;
 import com.jme3.input.controls.ActionListener;
@@ -54,7 +52,7 @@ public class Main extends SimpleApplication implements AnimEventListener{
     //Material
     Material stone_mat;
     Material gun_mat;
-    Material zombie_mat;
+    Material enemy_mat;
     
     //Player
     private CharacterControl player;
@@ -67,10 +65,10 @@ public class Main extends SimpleApplication implements AnimEventListener{
     private Vector3f vectorDifference;
     
     //Inimigo
-    private Spatial zumbi;
+    private Spatial enemy;
     private AnimControl control1;
     private AnimChannel channel1;
-    private ArrayList<Spatial> zumbis = new ArrayList<Spatial>();
+    private ArrayList<Spatial> enemies = new ArrayList<Spatial>();
     
     //Fisica da aplicaçao
     private BulletAppState bulletAppState;
@@ -114,12 +112,12 @@ public class Main extends SimpleApplication implements AnimEventListener{
         initMaterials();
         initPhysics();
         initPlayer();
-        initZumbi();
         initLight();
         initMap();
         initCrosshairs();
         initAudio();
         initScene();
+        //initEnemy();
         
     }
     
@@ -127,17 +125,22 @@ public class Main extends SimpleApplication implements AnimEventListener{
     @Override
     public void simpleUpdate(float tpf) {
         movePlayer();
+        colisaoBalaInimigo();
         
-        //colisaoBalaZumbi
-        for (int i = 0; i < zumbis.size(); i++) {
-            for (int j = 0; j < balas.size(); j++) {
-                balas.get(j).collideWith(zumbis.get(i).getWorldBound(), results);
-                if (results.size() > 0) {
-                    zumbis.get(i).removeFromParent();    
-                    balas.get(j).removeFromParent();
-                    results = new CollisionResults(); 
-                }
-            }
+        //velocidade
+        tpf = tpf*6;
+        //inimigo seguindo zumbi
+        for (Spatial e : enemies) {
+            if (e.getLocalTranslation().x < player.getPhysicsLocation().x)
+                e.getLocalTranslation().x += tpf;
+            if (e.getLocalTranslation().x > player.getPhysicsLocation().x)
+                e.getLocalTranslation().x -= tpf;
+            if (e.getLocalTranslation().z < player.getPhysicsLocation().z)
+                e.getLocalTranslation().z += tpf;
+            if (e.getLocalTranslation().z > player.getPhysicsLocation().z)
+                e.getLocalTranslation().z -= tpf;
+            
+            e.lookAt(player.getPhysicsLocation(), new Vector3f(0, 1, 0));
         }
     }
     
@@ -271,11 +274,11 @@ public class Main extends SimpleApplication implements AnimEventListener{
         balas.add(ball_geo);
     }
 
-    private void initZumbi() {
-        /*control1 = zumbi.getControl(AnimControl.class);
+    private void initEnemy() {
+        control1 = enemy.getControl(AnimControl.class);
         control1.addListener(this);
         channel1 = control1.createChannel();
-        channel1.setAnim("RunTop");*/
+        //channel1.setAnim("RunTop");
         
         //System.out.println(control1.getAnimationNames());
     }
@@ -286,11 +289,11 @@ public class Main extends SimpleApplication implements AnimEventListener{
         sun.setDirection(cam.getDirection().setY(10f));
         rootNode.addLight(sun);
         
-        /*
         AmbientLight al = new AmbientLight();
         al.setColor(ColorRGBA.White.mult(1.3f));
         rootNode.addLight(al);
         
+        /*
         final int SHADOWMAP_SIZE = 1024;
         DirectionalLightShadowRenderer dlsr = new DirectionalLightShadowRenderer(assetManager, SHADOWMAP_SIZE, 3);
         dlsr.setLight(sun);
@@ -335,9 +338,6 @@ public class Main extends SimpleApplication implements AnimEventListener{
         Texture gun_text = assetManager.loadTexture("Textures/TexturaAK.png");
         gun_mat.setTexture("ColorMap", gun_text);
         
-        zombie_mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-        Texture zombie_text = assetManager.loadTexture("Textures/Zumbi/3_Albedo.tga");
-        zombie_mat.setTexture("ColorMap", zombie_text);
     }
         
     private void initAudio() {
@@ -367,7 +367,7 @@ public class Main extends SimpleApplication implements AnimEventListener{
                     criarParedeChao(i, j, 1, 3f);
                 }
                 if(map[i][j] == 4) {
-                    criarZumbi(i, j, 4);
+                    criarInimigo(i, j, 4);
                 }
             }
         }   
@@ -424,18 +424,22 @@ public class Main extends SimpleApplication implements AnimEventListener{
         bulletAppState.getPhysicsSpace().add(r);
     }
     
-    private void criarZumbi(int x, int z, int chao) {
-        zumbi = assetManager.loadModel("Models/Zumbi/ZombieMesh.obj");
-        zumbi.setMaterial(zombie_mat);
-        zumbi.setLocalScale(0.023f);
-        zumbi.setLocalTranslation(-40 + x * 2, chao -5.5f, -40 + z * 2);
+    private void criarInimigo(int x, int z, int chao) {
+        enemy = assetManager.loadModel("Models/Sinbad/Sinbad.mesh.xml");
+        enemy.setLocalScale(0.5f);
+        enemy.setLocalTranslation(-40 + x * 2, chao -5.5f, -40 + z * 2);
         
         RigidBodyControl r2 = new RigidBodyControl();
-        zumbi.addControl(r2);
-        r2.setPhysicsLocation(zumbi.getLocalTranslation());
+        enemy.addControl(r2);
+        r2.setPhysicsLocation(enemy.getLocalTranslation());
+        
+        control1 = enemy.getControl(AnimControl.class);
+        control1.addListener(this);
+        channel1 = control1.createChannel();
+        channel1.setAnim("RunBase");
      
-        zumbis.add(zumbi);
-        rootNode.attachChild(zumbi);
+        enemies.add(enemy);
+        rootNode.attachChild(enemy);
         bulletAppState.getPhysicsSpace().add(r2);
     }
 
@@ -481,6 +485,19 @@ public class Main extends SimpleApplication implements AnimEventListener{
         setGun();
     }
 
+    private void colisaoBalaInimigo() {
+        for (int i = 0; i < enemies.size(); i++) {
+            for (int j = 0; j < balas.size(); j++) {
+                balas.get(j).collideWith(enemies.get(i).getWorldBound(), results);
+                if (results.size() > 0) {
+                    enemies.get(i).removeFromParent();    
+                    balas.get(j).removeFromParent();
+                    results = new CollisionResults(); 
+                }
+            }
+        }
+    }
+    
     private int[][] getMap() {
         //50x50
         int map[][] = {

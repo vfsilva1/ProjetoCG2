@@ -25,6 +25,7 @@ import com.jme3.light.DirectionalLight;
 import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
 import com.jme3.math.FastMath;
+import com.jme3.math.Matrix3f;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
 import com.jme3.post.FilterPostProcessor;
@@ -104,8 +105,6 @@ public class Main extends SimpleApplication implements AnimEventListener{
         app.start();
     }
     
-    
-    
     @Override
     public void simpleInitApp() {
         initKeys();
@@ -131,14 +130,21 @@ public class Main extends SimpleApplication implements AnimEventListener{
         tpf = tpf*6;
         //inimigo seguindo zumbi
         for (Spatial e : enemies) {
-            if (e.getLocalTranslation().x < player.getPhysicsLocation().x)
+            if (e.getLocalTranslation().x < player.getPhysicsLocation().x) {
                 e.getLocalTranslation().x += tpf;
-            if (e.getLocalTranslation().x > player.getPhysicsLocation().x)
+            }
+            if (e.getLocalTranslation().x > player.getPhysicsLocation().x) {
                 e.getLocalTranslation().x -= tpf;
-            if (e.getLocalTranslation().z < player.getPhysicsLocation().z)
+            }
+            if (e.getLocalTranslation().z < player.getPhysicsLocation().z) {
                 e.getLocalTranslation().z += tpf;
-            if (e.getLocalTranslation().z > player.getPhysicsLocation().z)
+            }
+            if (e.getLocalTranslation().z > player.getPhysicsLocation().z) {
                 e.getLocalTranslation().z -= tpf;
+            }
+            
+            RigidBodyControl rb = e.getControl(RigidBodyControl.class);
+            rb.setPhysicsLocation(e.getLocalTranslation());
             
             e.lookAt(player.getPhysicsLocation(), new Vector3f(0, 1, 0));
         }
@@ -385,25 +391,6 @@ public class Main extends SimpleApplication implements AnimEventListener{
             boxGeo.setMaterial(boxMat);
             boxGeo.setLocalTranslation(0f,-1f, 0f);
             
-            ParticleEmitter fog = new ParticleEmitter("Emitter", ParticleMesh.Type.Triangle, 30);
-            Material mat_red = new Material(assetManager, "Common/MatDefs/Misc/Particle.j3md");
-            mat_red.setTexture("Texture", assetManager.loadTexture("Effects/Smoke/Smoke.png"));
-            fog.setMaterial(mat_red);
-            fog.setImagesX(1);
-            fog.setImagesY(15); // 2x2 texture animation
-            fog.setEndColor(  new ColorRGBA(204f,204f,204f,0.2f));   // red
-            fog.setStartColor(new ColorRGBA(204f,204f,204f,0.2f)); // yellow
-            fog.getParticleInfluencer().setInitialVelocity(new Vector3f(0, 2, 0));
-            fog.setStartSize(1.0f);
-            fog.setEndSize(0.1f);
-            fog.setGravity(0, 1, 0);
-            fog.setLowLife(1f);
-            fog.setHighLife(3f);
-            fog.getParticleInfluencer().setVelocityVariation(0.2f);
-            fog.move(-40 + x * 2, chao, -40 + z * 2);
-            fog.setNumParticles(5);
-            rootNode.attachChild(fog);
-            
         } else {
             boxGeo = new Geometry("Bloco", boxMesh); 
             Material boxMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
@@ -426,8 +413,8 @@ public class Main extends SimpleApplication implements AnimEventListener{
     
     private void criarInimigo(int x, int z, int chao) {
         enemy = assetManager.loadModel("Models/Sinbad/Sinbad.mesh.xml");
-        enemy.setLocalScale(0.5f);
-        enemy.setLocalTranslation(-40 + x * 2, chao -5.5f, -40 + z * 2);
+        enemy.setLocalScale(0.5f);  
+        enemy.setLocalTranslation(-40 + x * 2, chao -3.5f, -40 + z * 2);
         
         RigidBodyControl r2 = new RigidBodyControl();
         enemy.addControl(r2);
@@ -445,7 +432,7 @@ public class Main extends SimpleApplication implements AnimEventListener{
 
     private void initPhysics() {
         bulletAppState = new BulletAppState();
-        //bulletAppState.setDebugEnabled(true);
+        bulletAppState.setDebugEnabled(true);
         stateManager.attach(bulletAppState);
     }
 

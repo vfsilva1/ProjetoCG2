@@ -313,10 +313,10 @@ public class Main extends SimpleApplication implements AnimEventListener{
         viewPort.addProcessor(fpp);
         */
         
-        FilterPostProcessor fpp2 = new FilterPostProcessor(assetManager);
-        SSAOFilter ssaoFilter = new SSAOFilter(12.94f, 43.92f, 0.33f, 0.61f);
-        fpp2.addFilter(ssaoFilter);
-        viewPort.addProcessor(fpp2);
+        //FilterPostProcessor fpp2 = new FilterPostProcessor(assetManager);
+        //SSAOFilter ssaoFilter = new SSAOFilter(12.94f, 43.92f, 0.33f, 0.61f);
+        //fpp2.addFilter(ssaoFilter);
+        //viewPort.addProcessor(fpp2);
     }
 
     private void initCrosshairs() {
@@ -353,7 +353,8 @@ public class Main extends SimpleApplication implements AnimEventListener{
         audio_gun.setVolume(2);
         rootNode.attachChild(audio_gun);
         
-        audio_background = new AudioNode(assetManager, "Sounds/ZombieBackground.wav", DataType.Buffer);
+        //audio_background = new AudioNode(assetManager, "Sounds/ZombieBackground.wav", DataType.Buffer);
+        audio_background = new AudioNode(assetManager, "Sounds/Som_Ambiente.wav", DataType.Buffer);
         audio_background.setLooping(true);
         audio_background.setPositional(false);
         audio_background.setVolume(2);
@@ -372,9 +373,9 @@ public class Main extends SimpleApplication implements AnimEventListener{
                 if (map[i][j] == 1) {
                     criarParedeChao(i, j, 1, 3f);
                 }
-                if(map[i][j] == 4) {
-                    criarInimigo(i, j, 4);
-                }
+                //if(map[i][j] == 4) {
+                //    criarInimigo(i, j, 4);
+                //}
             }
         }   
     }

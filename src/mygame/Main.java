@@ -57,8 +57,6 @@ public class Main extends SimpleApplication implements AnimEventListener {
     private Vector3f camLeft = new Vector3f();
     private Vector3f walkDirection = new Vector3f();
     private boolean left = false, right = false, up = false, down = false;
-    private BitmapText hud;
-    private long score = 0;
     private Vector3f vectorDifference;
 
     //Inimigo
@@ -75,6 +73,10 @@ public class Main extends SimpleApplication implements AnimEventListener {
     private RigidBodyControl ball_phy;
     private static final Sphere sphere;
     private ArrayList<Geometry> balas = new ArrayList<Geometry>();
+    
+    //Mapa
+    private Box boxMesh;
+    private Geometry boxGeo;
 
     //Efeitos sonoros 
     private AudioNode audio_gun;
@@ -110,13 +112,14 @@ public class Main extends SimpleApplication implements AnimEventListener {
         initLight();
         initMap();
         initCrosshairs();
-        hud = new BitmapText(guiFont, false);
-        initHUD();
         initAudio();
         initScene();
         initEnemy(4);
     }
 
+    long t1;
+    long inter=3000;
+    
     @Override
     public void simpleUpdate(float tpf) {
         movePlayer();
@@ -124,16 +127,26 @@ public class Main extends SimpleApplication implements AnimEventListener {
         inimigoSeguePlayer(tpf*8);
         
         Random r = new Random();
-        int n = r.nextInt(10000) + 1;
+        if(t1 + inter < System.currentTimeMillis())
+        {
+            t1 = System.currentTimeMillis();
+            
+            int n = r.nextInt(100) + 1;
+            if (n < 12) initEnemy(4);
+            else if (n < 24) initEnemy(5);
+            else if (n < 36) initEnemy(6);
+            else if (n < 48) initEnemy(7);
+            else if (n < 60) initEnemy(8);
+            else if (n < 72) initEnemy(9);
+            else if (n < 84) initEnemy(10);
+            else if (n < 96) initEnemy(11);
+            
+            for (Geometry bala : balas) {
+               rootNode.detachChild(bala);
+               bulletAppState.getPhysicsSpace().remove(bala);
+            }
+        }
         
-        if (n < 12) initEnemy(4);
-        else if (n < 24) initEnemy(5);
-        else if (n < 36) initEnemy(6);
-        else if (n < 48) initEnemy(7);
-        else if (n < 60) initEnemy(8);
-        else if (n < 72) initEnemy(9);
-        else if (n < 84) initEnemy(10);
-        else if (n < 96) initEnemy(11);
     }
 
     private void initPlayer() {
@@ -290,10 +303,11 @@ public class Main extends SimpleApplication implements AnimEventListener {
         }
         enemy = assetManager.loadModel("Models/Sinbad/Sinbad.mesh.xml");
                 
+        System.out.println("mygame.Main.initEnemy() " + x + " " + z);
         enemies.add(new Inimigo(enemy, x, 4, z));
-        System.out.println(enemies.size());
         rootNode.attachChild(enemy);
-        bulletAppState.getPhysicsSpace().add(enemies.get(enemies.size() - 1).getRigidBodyControl());
+       // bulletAppState.getPhysicsSpace().add(enemies.get(enemies.size() - 1).getRigidBodyControl());
+        
         
         //System.out.println(control1.getAnimationNames());
     }
@@ -370,9 +384,8 @@ public class Main extends SimpleApplication implements AnimEventListener {
     }
 
     private void criarParedeChao(int x, int z, int chao, float y) {
-        Box boxMesh = new Box(1f, y, 1f);
-
-        Geometry boxGeo;
+        boxMesh = new Box(1f, y, 1f);
+        
         if (chao == -1) {
             boxGeo = new Geometry("BlocoChao", boxMesh);
             Material boxMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
@@ -407,7 +420,7 @@ public class Main extends SimpleApplication implements AnimEventListener {
 
     private void initPhysics() {
         bulletAppState = new BulletAppState();
-        bulletAppState.setDebugEnabled(false);
+        bulletAppState.setDebugEnabled(true);
         stateManager.attach(bulletAppState);
     }
 
@@ -453,23 +466,14 @@ public class Main extends SimpleApplication implements AnimEventListener {
                 balas.get(j).collideWith(enemies.get(i).getSpatial().getWorldBound(), results);
                 if (results.size() > 0) {
                     enemies.get(i).getSpatial().removeFromParent();
+                    rootNode.detachChild(balas.get(j));
+                    bulletAppState.getPhysicsSpace().remove(balas.get(j));
                     balas.get(j).removeFromParent();
                     results = new CollisionResults();
 
-                    score++;
-                    initHUD();
                 }
             }
         }
-    }
-
-    private void initHUD() {
-        setDisplayStatView(false);
-        hud.setSize(guiFont.getCharSet().getRenderedSize() * 2);
-        hud.setText("SCORE: " + score); //mira     
-        hud.setColor(ColorRGBA.Blue);
-        hud.setLocalTranslation(settings.getWidth() - 200, 50, 0);
-        guiNode.attachChild(hud);
     }
 
     private void inimigoSeguePlayer(float speed) {
@@ -520,11 +524,11 @@ public class Main extends SimpleApplication implements AnimEventListener {
             {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
             {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
             {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-            {1, -2, -2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1},
+            {1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1},
             {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
             {1, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 1},
             {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-            {1, -2, -2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1},
+            {1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1},
             {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
             {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
             {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},

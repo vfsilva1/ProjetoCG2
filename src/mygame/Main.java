@@ -84,7 +84,7 @@ public class Main extends SimpleApplication implements AnimEventListener {
     private AudioNode audio_gun;
     private AudioNode audio_background;
     
-    private boolean fimJogo = true;
+    private boolean fimJogo;
     private BitmapText end;
 
     static {
@@ -130,7 +130,7 @@ public class Main extends SimpleApplication implements AnimEventListener {
     
     @Override
     public void simpleUpdate(float tpf) {
-        if (fimJogo) {
+        if (!fimJogo) {
             guiNode.detachAllChildren();
             
             movePlayer();
@@ -586,15 +586,22 @@ public class Main extends SimpleApplication implements AnimEventListener {
                     for (Inimigo e : enemies) {
                         rootNode.detachChild(e.getSpatial());
                     }
+                    enemies.removeAll(enemies);
                     
                     end = new BitmapText(guiFont, false);
                     end.setSize(guiFont.getCharSet().getRenderedSize() * 2);
-                    end.setText("FIM DE JOGO"); //mira     
+                    end.setText("GAME OVER");
                     end.setColor(ColorRGBA.Red);
-                    end.setLocalTranslation(settings.getWidth() / 2 - 90, settings.getHeight() / 2 + 28, 0); //center
+                    end.setLocalTranslation(settings.getWidth() / 2 - 100, settings.getHeight() / 2 + 28, 0); //center
                     guiNode.attachChild(end);
+                    BitmapText r = new BitmapText(guiFont, false);
+                    r.setSize(guiFont.getCharSet().getRenderedSize() * 2);
+                    r.setText("Press 'R' to Restart");
+                    r.setColor(ColorRGBA.Red);
+                    r.setLocalTranslation(settings.getWidth() / 2 - 120, settings.getHeight() / 2 - 10, 0); //center
+                    guiNode.attachChild(r);
                     
-                    //fimJogo = true;
+                    fimJogo = true;
                 }
             }
         }

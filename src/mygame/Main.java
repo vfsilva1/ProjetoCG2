@@ -36,6 +36,8 @@ import com.jme3.texture.Texture;
 import com.jme3.util.SkyFactory;
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This is the Main Class of your Game. You should only do initialization here.
@@ -81,6 +83,9 @@ public class Main extends SimpleApplication implements AnimEventListener {
     //Efeitos sonoros 
     private AudioNode audio_gun;
     private AudioNode audio_background;
+    
+    private boolean fimJogo = true;
+    private BitmapText end;
 
     static {
         /**
@@ -101,7 +106,9 @@ public class Main extends SimpleApplication implements AnimEventListener {
         app.setShowSettings(false);
         app.setSettings(defs);
         app.start();
+        
     }
+    
 
     @Override
     public void simpleInitApp() {
@@ -115,6 +122,7 @@ public class Main extends SimpleApplication implements AnimEventListener {
         initAudio();
         initScene();
         initEnemy(4);
+        
     }
 
     long t1;
@@ -122,29 +130,37 @@ public class Main extends SimpleApplication implements AnimEventListener {
     
     @Override
     public void simpleUpdate(float tpf) {
-        movePlayer();
-        colisaoBalaInimigo();
-        inimigoSeguePlayer(tpf*8);
-        
-        Random r = new Random();
-        if(t1 + inter < System.currentTimeMillis())
-        {
-            t1 = System.currentTimeMillis();
+        if (fimJogo) {
+            guiNode.detachAllChildren();
             
-            int n = r.nextInt(100) + 1;
-            if (n < 12) initEnemy(4);
-            else if (n < 24) initEnemy(5);
-            else if (n < 36) initEnemy(6);
-            else if (n < 48) initEnemy(7);
-            else if (n < 60) initEnemy(8);
-            else if (n < 72) initEnemy(9);
-            else if (n < 84) initEnemy(10);
-            else if (n < 96) initEnemy(11);
-            
-            for (Geometry bala : balas) {
-               rootNode.detachChild(bala);
-               bulletAppState.getPhysicsSpace().remove(bala);
+            movePlayer();
+            colisaoBalaInimigo();
+            inimigoSeguePlayer(tpf*8);
+            colisaoInimigoPlayer();
+
+            Random r = new Random();
+            if(t1 + inter < System.currentTimeMillis())
+            {
+                t1 = System.currentTimeMillis();
+
+                int n = r.nextInt(100) + 1;
+                if (n < 12) initEnemy(4);
+                else if (n < 24) initEnemy(5);
+                else if (n < 36) initEnemy(6);
+                else if (n < 48) initEnemy(7);
+                else if (n < 60) initEnemy(8);
+                else if (n < 72) initEnemy(9);
+                else if (n < 84) initEnemy(10);
+                else if (n < 96) initEnemy(11);
+
+                for (Geometry bala : balas) {
+                   rootNode.detachChild(bala);
+                   bulletAppState.getPhysicsSpace().remove(bala);
+                }
             }
+        }
+        else {
+            flyCam.setMoveSpeed(0);
         }
         
     }
@@ -176,6 +192,7 @@ public class Main extends SimpleApplication implements AnimEventListener {
         inputManager.addMapping("Up", new KeyTrigger(KeyInput.KEY_W));
         inputManager.addMapping("Down", new KeyTrigger(KeyInput.KEY_S));
         inputManager.addMapping("Jump", new KeyTrigger(KeyInput.KEY_SPACE));
+        inputManager.addMapping("Restart", new KeyTrigger(KeyInput.KEY_R));
         inputManager.addListener(actionListener, "SliceVertical");
         inputManager.addListener(actionListener, "SliceHorizontal");
         inputManager.addListener(actionListener, "RunBase");
@@ -185,6 +202,7 @@ public class Main extends SimpleApplication implements AnimEventListener {
         inputManager.addListener(actionListener, "Up");
         inputManager.addListener(actionListener, "Down");
         inputManager.addListener(actionListener, "Jump");
+        inputManager.addListener(actionListener, "Restart");
     }
 
     private ActionListener actionListener = new ActionListener() {
@@ -239,6 +257,11 @@ public class Main extends SimpleApplication implements AnimEventListener {
             if (name.equals("Jump") && !keyPressed) {
                 player.jump(new Vector3f(0, 10f, 0));
             }
+            if(name.equals("Restart") && !keyPressed)
+            {
+                fimJogo = false;
+            }
+
         }
     };
 
@@ -420,7 +443,7 @@ public class Main extends SimpleApplication implements AnimEventListener {
 
     private void initPhysics() {
         bulletAppState = new BulletAppState();
-        bulletAppState.setDebugEnabled(true);
+        bulletAppState.setDebugEnabled(false);
         stateManager.attach(bulletAppState);
     }
 
@@ -554,4 +577,27 @@ public class Main extends SimpleApplication implements AnimEventListener {
 
         return map;
     }
+
+    private void colisaoInimigoPlayer() {
+        for (int i = 0; i < enemies.size(); i++) {
+            if ((enemies.get(i).getSpatial().getLocalTranslation().x > player.getPhysicsLocation().x * 0.9 && enemies.get(i).getSpatial().getLocalTranslation().x < player.getPhysicsLocation().x * 1.1)) { 
+                if (enemies.get(i).getSpatial().getLocalTranslation().z > player.getPhysicsLocation().z * 0.9 && enemies.get(i).getSpatial().getLocalTranslation().z < player.getPhysicsLocation().z * 1.1) {
+                    
+                    for (Inimigo e : enemies) {
+                        rootNode.detachChild(e.getSpatial());
+                    }
+                    
+                    end = new BitmapText(guiFont, false);
+                    end.setSize(guiFont.getCharSet().getRenderedSize() * 2);
+                    end.setText("FIM DE JOGO"); //mira     
+                    end.setColor(ColorRGBA.Red);
+                    end.setLocalTranslation(settings.getWidth() / 2 - 90, settings.getHeight() / 2 + 28, 0); //center
+                    guiNode.attachChild(end);
+                    
+                    //fimJogo = true;
+                }
+            }
+        }
+    }
 }
+
